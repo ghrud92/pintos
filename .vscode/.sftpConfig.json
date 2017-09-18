@@ -1,0 +1,25 @@
+{
+    "host": "uni08.unist.ac.kr",
+    "port": 22,
+    "username": "cs20151096",
+    "password": "k8434141!",
+    "protocol": "sftp",
+    "agent": null,
+    "privateKeyPath": null,
+    "passphrase": null,
+    "passive": false,
+    "interactiveAuth": false,
+    "remotePath": "/home1/students/cs20151096/pintOS/proj1",
+    "uploadOnSave": false,
+    "syncMode": "update",
+    "watcher": {
+        "files": false,
+        "autoUpload": false,
+        "autoDelete": false
+    },
+    "ignore": [
+        "**/.vscode/**",
+        "**/.git/**",
+        "**/.DS_Store"
+    ]
+}
