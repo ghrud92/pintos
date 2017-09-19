@@ -4,7 +4,25 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "taskName": "build",
+            "taskName": "buildc",
+            "type": "process",
+            "command": "gcc",
+            "args": [
+                "-g",
+                "/t:build"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "presentation": {
+                "reveal": "silent"
+            },
+            "problemMatcher": "$msCompile"
+        }
+
+        {
+            "taskName": "buildcpp",
             "type": "process",
             "command": "g++",
             "args": [
