@@ -20,7 +20,7 @@
             },
             "problemMatcher": "$msCompile"
         }
-
+        ,
         {
             "taskName": "buildcpp",
             "type": "process",
