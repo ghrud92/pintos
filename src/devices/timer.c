@@ -91,12 +91,14 @@ timer_elapsed (int64_t then)
 void
 timer_sleep (int64_t ticks) 
 {
+  enum intr_level temp = intr_disable();
   thread_current() -> wake_up_time = timer_ticks () + ticks;
   list_push_back (&mysleep, &(thread_current() -> elem) );
-  thread_block();
   //ASSERT (intr_get_level () == INTR_ON);
+  thread_block();
   //while (timer_elapsed (start) < ticks) 
   //  thread_yield ();
+  intr_set_level (temp);
 }
 
 /* Sleeps for approximately MS milliseconds.  Interrupts must be
@@ -176,17 +178,17 @@ timer_interrupt (struct intr_frame *args UNUSED)
   ticks++;
   if(!list_empty(&mysleep))
   {
-    thread * now = list_entry(list_front(&mysleep), struct thread, elem);
+    struct thread * now = list_entry(list_front(&mysleep), struct thread, elem);
     do
     {
       
-      if (now -> wake_up_time >= timer_ticks ())
+      if (now -> wake_up_time <= timer_ticks ())
       {
-        thread_unblock(now);
         list_remove(&(now->elem));
+        thread_unblock(now);
       }
-      now = list_entry(now->elem.next, struct thread, elem);
-    } while(now->elem != list_end (&mylist));
+      now = list_entry(list_next(&(now->elem)), struct thread, elem);
+    } while(&(now->elem) != list_end (&mysleep));
   }
   thread_tick ();
 }
