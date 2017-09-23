@@ -7,6 +7,7 @@
 #include "threads/interrupt.h"
 #include "threads/synch.h"
 #include "threads/thread.h"
+#include "lib/kernel/list.h"
   
 /* See [8254] for hardware details of the 8254 timer chip. */
 
@@ -188,7 +189,7 @@ timer_interrupt (struct intr_frame *args UNUSED)
         thread_unblock(now);
       }
       now = list_entry(list_next(&(now->elem)), struct thread, elem);
-    } while(&(now->elem) != list_end (&mysleep));
+    } while(now->elem.next != NULL);
   }
   thread_tick ();
 }
