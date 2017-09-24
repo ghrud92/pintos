@@ -260,6 +260,10 @@ thread_unblock (struct thread *t)
   list_insert_ordered (&ready_list, &(t->elem), compare_priority, NULL);
   t->status = THREAD_READY;
   intr_set_level (old_level);
+  if (thread_get_priority() < t->priority)
+  {
+    thread_yield();
+  }
 }
 
 /* Returns the name of the running thread. */
