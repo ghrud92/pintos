@@ -70,7 +70,7 @@ static void *alloc_frame (struct thread *, size_t size);
 static void schedule (void);
 void thread_schedule_tail (struct thread *prev);
 static tid_t allocate_tid (void);
-bool compare_priority (struct list_elem * a, struct list_elem * b, void * c);
+bool compare_priority (struct list_elem *, struct list_elem *, void *);
 
 /* Initializes the threading system by transforming the code
    that's currently running into a thread.  This can't work in
@@ -87,9 +87,9 @@ bool compare_priority (struct list_elem * a, struct list_elem * b, void * c);
    finishes. */
 
 bool
-compare_priority (struct list_elem * a, struct list_elem * b, void * c)
+compare_priority (struct list_elem * compare_a, struct list_elem * compare_b, void * aux)
 {
-  return list_entry(a, struct thread, elem)->priority > list_entry(b, struct thread, elem)->priority;
+  return list_entry(compare_a, struct thread, elem)->priority > list_entry(compare_b, struct thread, elem)->priority;
 }   
 
 void
@@ -260,10 +260,10 @@ thread_unblock (struct thread *t)
   list_insert_ordered (&ready_list, &(t->elem), compare_priority, NULL);
   t->status = THREAD_READY;
   intr_set_level (old_level);
-  if (thread_get_priority() < t->priority)
-  {
-    thread_yield();
-  }
+  // if (thread_get_priority() < t->priority)
+  // {
+  //   thread_yield();
+  // }
 }
 
 /* Returns the name of the running thread. */
