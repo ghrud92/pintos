@@ -13,3 +13,4 @@ a.out
 .~
 thumbs.db
 .vscode/
+*.json
