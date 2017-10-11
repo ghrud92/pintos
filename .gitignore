@@ -14,3 +14,7 @@ a.out
 thumbs.db
 .vscode/
 *.json
+.ftpconfig
+.tags*
+.idea/
+.vscode/
