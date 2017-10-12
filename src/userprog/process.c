@@ -20,8 +20,7 @@
 #include "threads/malloc.h"
 
 #define WORD_SIZE 4
-#define DEFAULT_ARGV 2
-#define MAX_ARGV 1024
+#define MAX_ARGV_NUM 1024
 
 static thread_func start_process NO_RETURN;
 static bool load (const char *cmdline, void (**eip) (void), void **esp);
@@ -75,12 +74,12 @@ start_process (void *file_name_)
   success = load (file_name, &if_.eip, &if_.esp);
 
   char *token;
-  char **argvs = malloc(DEFAULT_ARGV*sizeof(char *));
+  char **argvs = malloc(MAX_ARGV_NUM * sizeof(char *));
   if (!argvs)
   {
     return false;
   }
-  int i, argc = 0, argv_size = DEFAULT_ARGV;
+  int i, argc = 0;
 
   // Push args onto stack
   for (token = file_name; token != NULL; token = strtok_r (NULL, " ", &save_ptr))
@@ -88,16 +87,6 @@ start_process (void *file_name_)
     if_.esp -= strlen(token) + 1;
     argvs[argc] = if_.esp;
     argc++;
-    // Resize argv
-    if (argc >= argv_size)
-  	{
-  	  argv_size *= 2;
-  	  argvs = realloc(argvs, argv_size * sizeof(char *));
-  	  if (!argvs)
-  	    {
-  	      return false;
-  	    }
-  	}
     memcpy(if_.esp, token, strlen(token) + 1);
   }
   argvs[argc] = 0;
