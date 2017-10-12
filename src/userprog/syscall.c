@@ -7,6 +7,7 @@
 #include "filesys/filesys.h"
 #include "filesys/file.h"
 #include "threads/vaddr.h"
+#include "userprog/pagedir.c"
 
 static void syscall_handler (struct intr_frame *);
 
@@ -80,6 +81,22 @@ void exit (int status)
   thread_exit();
 }
 
+bool address_check (void * addr)
+{
+  if (!is_user_vaddr(addr))
+	{
+		exit(-1);
+		return false;
+	}
+	void * page = pagedir_get_page(thread_current()->pagedir, addr);
+	if (!page)
+	{
+		exit(-1);
+		return false;
+	}
+	return true;
+}
+
 void
 syscall_init (void) 
 {
@@ -98,22 +115,22 @@ syscall_handler (struct intr_frame *f UNUSED)
       halt();
       break;
     case SYS_CREATE
-      if(!is_user_vaddr(*(ptr+4)) || !is_user_vaddr(ptr+5))
+      if(!address_check(*(ptr+4)) || !address_check(ptr+5))
         exit(-1);
       create(ptr+4, *(ptr+5));
       break;
     case SYS_OPEN
-      if(!is_user_vaddr(*(ptr+1)))
+      if(!address_check(*(ptr+1)))
         exit(-1);
       f -> eax = open (ptr+1);
       break;
     case SYS_CLOSE
-      if(!is_user_vaddr(ptr+1))
+      if(!address_check(ptr+1))
         exit(-1);
       close (*(ptr+1));
       break;
     case SYS_EXIT
-      if(!is_user_vaddr(ptr+1))
+      if(!address_check(ptr+1))
         exit(-1);
       exit(*(ptr+1));
       break;
