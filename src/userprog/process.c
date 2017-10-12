@@ -17,6 +17,10 @@
 #include "threads/palloc.h"
 #include "threads/thread.h"
 #include "threads/vaddr.h"
+#include "threads/malloc.h"
+
+#define WORD_SIZE 4
+#define MAX_ARGV_NUM 1024
 
 static thread_func start_process NO_RETURN;
 static bool load (const char *cmdline, void (**eip) (void), void **esp);
@@ -39,6 +43,10 @@ process_execute (const char *file_name)
   strlcpy (fn_copy, file_name, PGSIZE);
 
   /* Create a new thread to execute FILE_NAME. */
+  // my code
+  char *save_ptr;
+  file_name = strtok_r (file_name, " ", &save_ptr);
+
   tid = thread_create (file_name, PRI_DEFAULT, start_process, fn_copy);
   if (tid == TID_ERROR)
     palloc_free_page (fn_copy);
@@ -54,12 +62,60 @@ start_process (void *file_name_)
   struct intr_frame if_;
   bool success;
 
+  // Get actual file name (first parsed token)
+  char *save_ptr;
+  file_name = strtok_r(file_name, " ", &save_ptr);
+
   /* Initialize interrupt frame and load executable. */
   memset (&if_, 0, sizeof if_);
   if_.gs = if_.fs = if_.es = if_.ds = if_.ss = SEL_UDSEG;
   if_.cs = SEL_UCSEG;
   if_.eflags = FLAG_IF | FLAG_MBS;
   success = load (file_name, &if_.eip, &if_.esp);
+
+  char *token;
+  char **argvs = malloc(MAX_ARGV_NUM * sizeof(char *));
+  if (!argvs)
+  {
+    return false;
+  }
+  int i, argc = 0;
+
+  // Push args onto stack
+  for (token = file_name; token != NULL; token = strtok_r (NULL, " ", &save_ptr))
+  {
+    if_.esp -= strlen(token) + 1;
+    argvs[argc] = if_.esp;
+    argc++;
+    memcpy(if_.esp, token, strlen(token) + 1);
+  }
+  argvs[argc] = 0;
+
+  // Align to word size (4 bytes)
+  i = (size_t) if_.esp % WORD_SIZE;
+  if (i)
+  {
+    if_.esp -= i;
+    memcpy(if_.esp, &argvs[argc], i);
+  }
+  // Push argv[i] for all i
+  for (i = argc; i >= 0; i--)
+  {
+    if_.esp -= sizeof(char *);
+    memcpy(if_.esp, &argvs[i], sizeof(char *));
+  }
+  // Push argv
+  token = if_.esp;
+  if_.esp -= sizeof(char **);
+  memcpy(if_.esp, &token, sizeof(char **));
+  // Push argc
+  if_.esp -= sizeof(int);
+  memcpy(if_.esp, &argc, sizeof(int));
+  // Push fake return addr
+  if_.esp -= sizeof(void *);
+  memcpy(if_.esp, &argvs[argc], sizeof(void *));
+  // Free argv
+  free(argvs);
 
   /* If load failed, quit. */
   palloc_free_page (file_name);
@@ -88,6 +144,7 @@ start_process (void *file_name_)
 int
 process_wait (tid_t child_tid UNUSED)
 {
+  while (true) {}
   return -1;
 }
 
