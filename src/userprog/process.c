@@ -19,7 +19,9 @@
 #include "threads/vaddr.h"
 #include "threads/malloc.h"
 
-#define MAX_ARGS_NUM 4096
+#define WORD_SIZE 4
+#define DEFAULT_ARGV 2
+#define MAX_ARGV 1024
 
 static thread_func start_process NO_RETURN;
 static bool load (const char *cmdline, void (**eip) (void), void **esp);
@@ -61,18 +63,9 @@ start_process (void *file_name_)
   struct intr_frame if_;
   bool success;
 
-  // my code parse real file name
-  int argc = 0;
-  int *argv_addr = malloc (MAX_ARGS_NUM * sizeof(int));
+  // Get actual file name (first parsed token)
   char *save_ptr;
-  char *token;
-  struct thread *t = thread_current ();
-  file_name = strtok_r (file_name, " ", &save_ptr);
-  for (token = file_name; token != NULL; token = strtok_r (NULL, " ", &save_ptr))
-  {
-    argv_addr[argc] = &token;
-    argc++;
-  }
+  file_name = strtok_r(file_name, " ", &save_ptr);
 
   /* Initialize interrupt frame and load executable. */
   memset (&if_, 0, sizeof if_);
@@ -81,10 +74,59 @@ start_process (void *file_name_)
   if_.eflags = FLAG_IF | FLAG_MBS;
   success = load (file_name, &if_.eip, &if_.esp);
 
-  if (success)
+  char *token;
+  char **argvs = malloc(DEFAULT_ARGV*sizeof(char *));
+  if (!argvs)
   {
-    t->self = filesys_open (file_name);
+    return false;
   }
+  int i, argc = 0, argv_size = DEFAULT_ARGV;
+
+  // Push args onto stack
+  for (token = file_name; token != NULL; token = strtok_r (NULL, " ", &save_ptr))
+  {
+    if_.esp -= strlen(token) + 1;
+    argvs[argc] = if_.esp;
+    argc++;
+    // Resize argv
+    if (argc >= argv_size)
+  	{
+  	  argv_size *= 2;
+  	  argvs = realloc(argvs, argv_size * sizeof(char *));
+  	  if (!argvs)
+  	    {
+  	      return false;
+  	    }
+  	}
+    memcpy(if_.esp, token, strlen(token) + 1);
+  }
+  argvs[argc] = 0;
+
+  // Align to word size (4 bytes)
+  i = (size_t) if_.esp % WORD_SIZE;
+  if (i)
+  {
+    if_.esp -= i;
+    memcpy(if_.esp, &argvs[argc], i);
+  }
+  // Push argv[i] for all i
+  for (i = argc; i >= 0; i--)
+  {
+    if_.esp -= sizeof(char *);
+    memcpy(if_.esp, &argvs[i], sizeof(char *));
+  }
+  // Push argv
+  token = if_.esp;
+  if_.esp -= sizeof(char **);
+  memcpy(if_.esp, &token, sizeof(char **));
+  // Push argc
+  if_.esp -= sizeof(int);
+  memcpy(if_.esp, &argc, sizeof(int));
+  // Push fake return addr
+  if_.esp -= sizeof(void *);
+  memcpy(if_.esp, &argvs[argc], sizeof(void *));
+  // Free argv
+  free(argvs);
 
   /* If load failed, quit. */
   palloc_free_page (file_name);
