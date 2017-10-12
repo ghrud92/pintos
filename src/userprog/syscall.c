@@ -31,8 +31,9 @@ int open (const char * file)
   {
     opfile -> file = filesys_open (*file);
     opfile -> fd = nextfd;
+    opfile -> caller = thread_current();
     list_push_front (&opfilelist, &(opfile -> opelem));
-    fd++;
+    nextfd++;
     return opfile -> fd;
   }
   else
@@ -43,7 +44,7 @@ void close (int fd)
 {
   if(!list_empty(&opfilelist))
   {
-    struct thread * now = list_entry(list_front(&opfilelist), struct openedfile, opelem);
+    struct openedfile * now = list_entry(list_front(&opfilelist), struct openedfile, opelem);
     do
     {
       if (now -> fd == fd)
@@ -60,12 +61,23 @@ void close (int fd)
 
 void halt ()
 {
-  power_off();
+  shutdown_power_off();
 } 
 
 void exit (int status)
 {
-
+  struct openedfile * now = list_entry(list_front(&opfilelist), struct openedfile, opelem);
+  do
+  {
+    if (now -> caller == thread_current())
+    {
+      file_close (now -> file);
+      list_remove(&(now->opelem));
+    }
+    now = list_entry(list_next(&(now->elem)), struct openedfile, opelem);
+  } while(now->elem.next != NULL);
+  thread_current()->exit_status = status;
+  thread_exit();
 }
 
 void
@@ -86,13 +98,24 @@ syscall_handler (struct intr_frame *f UNUSED)
       halt();
       break;
     case SYS_CREATE
-      create(ptr+4, ptr+5);
+      if(!is_user_vaddr(*(ptr+4)) || !is_user_vaddr(ptr+5))
+        exit(-1);
+      create(ptr+4, *(ptr+5));
       break;
     case SYS_OPEN
+      if(!is_user_vaddr(*(ptr+1)))
+        exit(-1);
       f -> eax = open (ptr+1);
       break;
     case SYS_CLOSE
-      close (ptr+1);
+      if(!is_user_vaddr(ptr+1))
+        exit(-1);
+      close (*(ptr+1));
+      break;
+    case SYS_EXIT
+      if(!is_user_vaddr(ptr+1))
+        exit(-1);
+      exit(*(ptr+1));
+      break;
   }
-  thread_exit ();
 }
