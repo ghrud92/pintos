@@ -18,8 +18,11 @@
 #include "threads/thread.h"
 #include "threads/vaddr.h"
 
+#define MAX_ARGS_NUM 4096
+
 static thread_func start_process NO_RETURN;
-static bool load (const char *cmdline, void (**eip) (void), void **esp);
+static bool load (const char *cmdline, void (**eip) (void), void **esp, char *save_ptr);
+// static bool setup_stack (void **esp);
 
 /* Starts a new thread running a user program loaded from
    FILENAME.  The new thread may be scheduled (and may even exit)
@@ -39,6 +42,9 @@ process_execute (const char *file_name)
   strlcpy (fn_copy, file_name, PGSIZE);
 
   /* Create a new thread to execute FILE_NAME. */
+  char *save_ptr;
+  file_name = strtok_r (file_name, " ", &save_ptr);
+
   tid = thread_create (file_name, PRI_DEFAULT, start_process, fn_copy);
   if (tid == TID_ERROR)
     palloc_free_page (fn_copy);
@@ -54,12 +60,16 @@ start_process (void *file_name_)
   struct intr_frame if_;
   bool success;
 
+  // parse real file name
+  char *save_ptr;
+  file_name = strtok_r (file_name, " ", &save_ptr);
+
   /* Initialize interrupt frame and load executable. */
   memset (&if_, 0, sizeof if_);
   if_.gs = if_.fs = if_.es = if_.ds = if_.ss = SEL_UDSEG;
   if_.cs = SEL_UCSEG;
   if_.eflags = FLAG_IF | FLAG_MBS;
-  success = load (file_name, &if_.eip, &if_.esp);
+  success = load (file_name, &if_.eip, &if_.esp, save_ptr);
 
   /* If load failed, quit. */
   palloc_free_page (file_name);
@@ -207,7 +217,7 @@ static bool load_segment (struct file *file, off_t ofs, uint8_t *upage,
    and its initial stack pointer into *ESP.
    Returns true if successful, false otherwise. */
 bool
-load (const char *file_name, void (**eip) (void), void **esp)
+load (const char *file_name, void (**eip) (void), void **esp, char *save_ptr)
 {
   struct thread *t = thread_current ();
   struct Elf32_Ehdr ehdr;
@@ -239,6 +249,7 @@ load (const char *file_name, void (**eip) (void), void **esp)
       || ehdr.e_phentsize != sizeof (struct Elf32_Phdr)
       || ehdr.e_phnum > 1024)
     {
+      printf("hahah\n");
       printf ("load: %s: error loading executable\n", file_name);
       goto done;
     }
@@ -305,6 +316,11 @@ load (const char *file_name, void (**eip) (void), void **esp)
   /* Set up stack. */
   if (!setup_stack (esp))
     goto done;
+
+  int argc = 0;
+  int addr[MAX_ARGS_NUM] = {0};
+  char *token;
+  
 
   /* Start address. */
   *eip = (void (*) (void)) ehdr.e_entry;
