@@ -7,6 +7,7 @@
 #include "filesys/filesys.h"
 #include "filesys/file.h"
 #include "threads/vaddr.h"
+#include <list.h>
 
 static void syscall_handler (struct intr_frame *);
 
@@ -18,15 +19,15 @@ bool create (const char * file, unsigned initial_size)
     return false;
   else
   {
-    filesys_create (*file, *initial_size);
+    filesys_create (file, initial_size);
     return true;
   }
-} 
+}
 
 int open (const char * file)
 {
   static int nextfd = 2;
-  struct openedfile * opfile = new openedfile;
+  struct openedfile *opfile = (openedfile*) malloc (sizeof(openedfile) * 1);
   if (file != NULL)
   {
     opfile -> file = filesys_open (*file);
@@ -57,12 +58,12 @@ void close (int fd)
     } while(now->elem.next != NULL);
   }
   return;
-} 
+}
 
 void halt ()
 {
   shutdown_power_off();
-} 
+}
 
 void exit (int status)
 {
@@ -81,14 +82,14 @@ void exit (int status)
 }
 
 void
-syscall_init (void) 
+syscall_init (void)
 {
   intr_register_int (0x30, 3, INTR_ON, syscall_handler, "syscall");
   list_init (&opfilelist);
 }
 
 static void
-syscall_handler (struct intr_frame *f UNUSED) 
+syscall_handler (struct intr_frame *f UNUSED)
 {
   int * ptr = f -> esp;
   int i;
