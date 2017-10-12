@@ -7,7 +7,6 @@
 #include "threads/interrupt.h"
 #include "threads/synch.h"
 #include "threads/thread.h"
-#include "lib/kernel/list.h"
   
 /* See [8254] for hardware details of the 8254 timer chip. */
 
@@ -30,7 +29,6 @@ static bool too_many_loops (unsigned loops);
 static void busy_wait (int64_t loops);
 static void real_time_sleep (int64_t num, int32_t denom);
 static void real_time_delay (int64_t num, int32_t denom);
-static struct list mysleep;
 
 /* Sets up the timer to interrupt TIMER_FREQ times per second,
    and registers the corresponding interrupt. */
@@ -39,7 +37,6 @@ timer_init (void)
 {
   pit_configure_channel (0, 2, TIMER_FREQ);
   intr_register_ext (0x20, timer_interrupt, "8254 Timer");
-  list_init (&mysleep);
 }
 
 /* Calibrates loops_per_tick, used to implement brief delays. */
@@ -92,14 +89,11 @@ timer_elapsed (int64_t then)
 void
 timer_sleep (int64_t ticks) 
 {
-  enum intr_level temp = intr_disable();
-  thread_current() -> wake_up_time = timer_ticks () + ticks;
-  list_push_back (&mysleep, &(thread_current() -> elem) );
-  //ASSERT (intr_get_level () == INTR_ON);
-  thread_block();
-  //while (timer_elapsed (start) < ticks) 
-  //  thread_yield ();
-  intr_set_level (temp);
+  int64_t start = timer_ticks ();
+
+  ASSERT (intr_get_level () == INTR_ON);
+  while (timer_elapsed (start) < ticks) 
+    thread_yield ();
 }
 
 /* Sleeps for approximately MS milliseconds.  Interrupts must be
@@ -177,20 +171,6 @@ static void
 timer_interrupt (struct intr_frame *args UNUSED)
 {
   ticks++;
-  if(!list_empty(&mysleep))
-  {
-    struct thread * now = list_entry(list_front(&mysleep), struct thread, elem);
-    do
-    {
-      
-      if (now -> wake_up_time <= timer_ticks ())
-      {
-        list_remove(&(now->elem));
-        thread_unblock(now);
-      }
-      now = list_entry(list_next(&(now->elem)), struct thread, elem);
-    } while(now->elem.next != NULL);
-  }
   thread_tick ();
 }
 

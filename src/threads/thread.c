@@ -70,7 +70,6 @@ static void *alloc_frame (struct thread *, size_t size);
 static void schedule (void);
 void thread_schedule_tail (struct thread *prev);
 static tid_t allocate_tid (void);
-bool compare_priority (struct list_elem * a, struct list_elem * b, void * c);
 
 /* Initializes the threading system by transforming the code
    that's currently running into a thread.  This can't work in
@@ -85,13 +84,6 @@ bool compare_priority (struct list_elem * a, struct list_elem * b, void * c);
 
    It is not safe to call thread_current() until this function
    finishes. */
-
-bool
-compare_priority (struct list_elem * a, struct list_elem * b, void * c)
-{
-  return list_entry(a, struct thread, elem)->priority > list_entry(b, struct thread, elem)->priority;
-}   
-
 void
 thread_init (void) 
 {
@@ -217,10 +209,6 @@ thread_create (const char *name, int priority,
   /* Add to run queue. */
   thread_unblock (t);
 
-  if (!list_empty(&ready_list) && thread_current()->priority < priority)
-  {
-    thread_yield();
-  }
   return tid;
 }
 
@@ -257,7 +245,7 @@ thread_unblock (struct thread *t)
 
   old_level = intr_disable ();
   ASSERT (t->status == THREAD_BLOCKED);
-  list_insert_ordered (&ready_list, &t->elem, compare_priority, NULL);
+  list_push_back (&ready_list, &t->elem);
   t->status = THREAD_READY;
   intr_set_level (old_level);
 }
@@ -328,7 +316,7 @@ thread_yield (void)
 
   old_level = intr_disable ();
   if (cur != idle_thread) 
-    list_insert_ordered (&ready_list, &cur->elem, compare_priority, NULL);
+    list_push_back (&ready_list, &cur->elem);
   cur->status = THREAD_READY;
   schedule ();
   intr_set_level (old_level);

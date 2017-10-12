@@ -2,13 +2,3 @@ cscope.files
 cscope.out
 TAGS
 tags
-*.o
-*.obj
-*.lib
-*.so
-*.dll
-*.exe
-a.out
-*.wqp
-.~
-thumbs.db
