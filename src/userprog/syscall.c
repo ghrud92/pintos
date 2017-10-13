@@ -83,18 +83,10 @@ void exit (int status)
 
 bool address_check (void * addr)
 {
-  if (!is_user_vaddr(addr))
-	{
-		exit(-1);
-		return false;
-	}
-	void * page = pagedir_get_page(thread_current()->pagedir, addr);
-	if (!page)
-	{
-		exit(-1);
-		return false;
-	}
-	return true;
+  if (!is_user_vaddr(addr) || !pagedir_get_page(thread_current()->pagedir, addr))
+    return false;
+  else
+	  return true;
 }
 
 void
