@@ -81,13 +81,20 @@ start_process (void *file_name_)
   }
   int i, argc = 0;
 
+  // if (if_.esp == PHYS_BASE)
+  // {
+  //   printf("%s\n", "PHYS BASE");
+  // }
+
   // Push args onto stack
   for (token = file_name; token != NULL; token = strtok_r (NULL, " ", &save_ptr))
   {
+    // printf("%s %d\n", token, argc);
     if_.esp -= strlen(token) + 1;
     argvs[argc] = if_.esp;
     argc++;
     memcpy(if_.esp, token, strlen(token) + 1);
+    // printf("%s\n", "after memcpy");
   }
   argvs[argc] = 0;
 
@@ -116,6 +123,13 @@ start_process (void *file_name_)
   memcpy(if_.esp, &argvs[argc], sizeof(void *));
   // Free argv
   free(argvs);
+
+  // hex_dump (uintptr_t ofs, const void *buf_, size_t size, bool ascii);
+  // hex_dump (0, if_.esp, 100, true);
+
+  // printf("%s %d\n", "1", *(int *)if_.esp);
+  // if_.esp += sizeof(int);
+  // printf("%s %d\n", "2", *(int *)if_.esp);
 
   /* If load failed, quit. */
   palloc_free_page (file_name);
