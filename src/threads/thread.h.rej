@@ -1,0 +1,9 @@
+diff a/src/threads/thread.h b/src/threads/thread.h	(rejected hunks)
+@@ -94,6 +94,7 @@
+ 
+ #ifdef USERPROG
+     /* Owned by userprog/process.c. */
++    bool die;
+     int exit_status;
+     uint32_t *pagedir;                  /* Page directory. */
+ #endif
