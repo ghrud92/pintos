@@ -161,7 +161,8 @@ int
 process_wait (tid_t child_tid UNUSED)
 {
   struct * child = tid_to_thread(child_tid);
-  while (child -> status != THREAD_DYING);
+  child -> die = false;
+  while (!(child -> die));
   {}
   return -1;
 }
@@ -189,6 +190,7 @@ process_exit (void)
       pagedir_activate (NULL);
       pagedir_destroy (pd);
     }
+  cur -> die = true;
 }
 
 /* Sets up the CPU for running user code in the current
