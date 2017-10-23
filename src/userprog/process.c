@@ -16,7 +16,6 @@
 #include "threads/interrupt.h"
 #include "threads/palloc.h"
 #include "threads/thread.h"
-// #include "threads/thread.c"
 #include "threads/vaddr.h"
 #include "threads/malloc.h"
 
@@ -162,8 +161,8 @@ process_wait (tid_t child_tid UNUSED)
 {
   struct thread* child = tid_to_thread(child_tid);
   child -> die = false;
-  while (!(child -> die));
-  {}
+  while (!(child -> die))
+  {thread_yield ();}
   return -1;
 }
 
@@ -172,7 +171,7 @@ void
 process_exit (void)
 {
   struct thread *cur = thread_current ();
-  dying[cur->tid] = true;
+  // dying[cur->tid] = true;
   uint32_t *pd;
   /* Destroy the current process's page directory and switch back
      to the kernel-only page directory. */
