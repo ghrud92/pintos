@@ -7,7 +7,9 @@
 #include "filesys/filesys.h"
 #include "filesys/file.h"
 #include "threads/vaddr.h"
+#include "userprog/pagedir.c"
 #include <list.h>
+
 
 static void syscall_handler (struct intr_frame *);
 
@@ -27,7 +29,7 @@ bool create (const char * file, unsigned initial_size)
 int open (const char * file)
 {
   static int nextfd = 2;
-  struct openedfile *opfile = malloc (sizeof(struct openedfile) * 1);
+  struct openedfile * opfile = malloc (sizeof(struct openedfile) * 1);
   if (file != NULL)
   {
     opfile -> file = filesys_open (*file);
@@ -84,6 +86,14 @@ void exit (int status)
   thread_exit();
 }
 
+bool address_check (void * addr)
+{
+  if (!is_user_vaddr(addr) || !pagedir_get_page(thread_current()->pagedir, addr))
+    return false;
+  else
+	  return true;
+}
+
 void
 syscall_init (void)
 {
@@ -101,23 +111,23 @@ syscall_handler (struct intr_frame *f UNUSED)
     case SYS_HALT:
       halt();
       break;
-    case SYS_CREATE:
-      if(!is_user_vaddr(*(ptr+4)) || !is_user_vaddr(ptr+5))
+    case SYS_CREATE
+      if(!address_check(*(ptr+4)) || !address_check(ptr+5))
         exit(-1);
       create(ptr+4, *(ptr+5));
       break;
-    case SYS_OPEN:
-      if(!is_user_vaddr(*(ptr+1)))
+    case SYS_OPEN
+      if(!address_check(*(ptr+1)))
         exit(-1);
       f -> eax = open (ptr+1);
       break;
-    case SYS_CLOSE:
-      if(!is_user_vaddr(ptr+1))
+    case SYS_CLOSE
+      if(!address_check(ptr+1))
         exit(-1);
       close (*(ptr+1));
       break;
-    case SYS_EXIT:
-      if(!is_user_vaddr(ptr+1))
+    case SYS_EXIT
+      if(!address_check(ptr+1))
         exit(-1);
       exit(*(ptr+1));
       break;
