@@ -93,6 +93,7 @@ struct thread
     /* Shared between thread.c and synch.c. */
     struct list_elem elem;              /* List element. */
     int exit_status;
+    bool ready_to_exit = false;
 
 #ifdef USERPROG
     /* Owned by userprog/process.c. */

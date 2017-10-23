@@ -24,7 +24,6 @@
 
 static thread_func start_process NO_RETURN;
 static bool load (const char *cmdline, void (**eip) (void), void **esp);
-static bool exit = false;
 
 /* Starts a new thread running a user program loaded from
    FILENAME.  The new thread may be scheduled (and may even exit)
@@ -159,13 +158,11 @@ start_process (void *file_name_)
 int
 process_wait (tid_t child_tid UNUSED)
 {
-  exit = false;
+  thread_current ()->ready_to_exit = false;
   while (true)
   {
-    if (exit)
-    {
+    if (thread_current ()->ready_to_exit)
       break;
-    }
   }
   return -1;
 }
@@ -176,7 +173,7 @@ process_exit (void)
 {
   struct thread *cur = thread_current ();
   uint32_t *pd;
-  exit = true;
+  cur->ready_to_exit = true;
   /* Destroy the current process's page directory and switch back
      to the kernel-only page directory. */
   pd = cur->pagedir;
