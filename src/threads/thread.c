@@ -20,6 +20,8 @@
    of thread.h for details. */
 #define THREAD_MAGIC 0xcd6abf4b
 
+static struct list all_list;
+
 /* List of processes in THREAD_READY state, that is, processes
    that are ready to run but not actually running. */
 static struct list ready_list;
@@ -580,6 +582,19 @@ allocate_tid (void)
   lock_release (&tid_lock);
 
   return tid;
+}
+
+struct thread *
+tid_to_thread (tid_t finding_tid)
+{
+  struct thread * now = list_entry(list_front(&all_list), struct thread, allelem);
+  while (now != NULL)
+  {
+    if (now -> tid == finding_tid)
+      return now;
+    now = list_entry(list_next(&(now->allelem)), struct thread, allelem);
+  }
+  return NULL;
 }
 
 /* Offset of `stack' member within `struct thread'.

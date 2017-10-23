@@ -159,13 +159,10 @@ start_process (void *file_name_)
 int
 process_wait (tid_t child_tid UNUSED)
 {
-  struct thread * child = list_entry(list_front(&all_list), struct thread, allelem);
-  while(child -> tid != child_tid)
-  {
-    child = list_entry(list_next(&(child->allelem)), struct thread, allelem);
-  }
+  struct * child = tid_to_thread(child_tid);
   while (child -> status != THREAD_DYING);
   {}
+  return -1;
 }
 
 /* Free the current process's resources. */
