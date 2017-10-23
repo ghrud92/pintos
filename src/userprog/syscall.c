@@ -7,7 +7,7 @@
 #include "filesys/filesys.h"
 #include "filesys/file.h"
 #include "threads/vaddr.h"
-#include "userprog/pagedir.c"
+#include "userprog/pagedir.h"
 #include <list.h>
 
 
