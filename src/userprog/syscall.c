@@ -86,6 +86,28 @@ void exit (int status)
   thread_exit();
 }
 
+int write (int fd , const void * buffer , unsigned size )
+{
+  if (fd == 1)
+  {
+    putbuf (*buffer,size);
+    return size;
+  }
+  else
+  {
+    struct openedfile * now = list_entry(list_front(&opfilelist), struct openedfile, opelem);
+    do
+    {
+      if ((now -> fd) == fd)
+      {
+        return file_write (now -> file, *buffer, size);
+      }
+      now = list_entry(list_next(&(now->opelem)), struct openedfile, opelem);
+    } while(now->opelem.next != NULL);
+    return 0;
+  }
+}
+
 bool address_check (void * addr)
 {
   if (!is_user_vaddr(addr) || !pagedir_get_page(thread_current()->pagedir, addr))
@@ -130,6 +152,10 @@ syscall_handler (struct intr_frame *f UNUSED)
       if(!address_check(ptr+1))
         exit(-1);
       exit(*(ptr+1));
+    case SYS_WRITE:
+      if(!address_check(*(ptr+6)));
+        exit(-1);
+        f -> eax = write(*(ptr+5), (ptr+6), *(ptr+7));
       break;
   }
 }
