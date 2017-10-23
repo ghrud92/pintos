@@ -111,22 +111,22 @@ syscall_handler (struct intr_frame *f UNUSED)
     case SYS_HALT:
       halt();
       break;
-    case SYS_CREATE
+    case SYS_CREATE:
       if(!address_check(*(ptr+4)) || !address_check(ptr+5))
         exit(-1);
       create(ptr+4, *(ptr+5));
       break;
-    case SYS_OPEN
+    case SYS_OPEN:
       if(!address_check(*(ptr+1)))
         exit(-1);
       f -> eax = open (ptr+1);
       break;
-    case SYS_CLOSE
+    case SYS_CLOSE:
       if(!address_check(ptr+1))
         exit(-1);
       close (*(ptr+1));
       break;
-    case SYS_EXIT
+    case SYS_EXIT:
       if(!address_check(ptr+1))
         exit(-1);
       exit(*(ptr+1));
