@@ -158,13 +158,13 @@ start_process (void *file_name_)
 int
 process_wait (tid_t child_tid UNUSED)
 {
-  thread_current ()->ready_to_exit = false;
-  while (true)
+  struct thread * child = list_entry(list_front(&all_list), struct thread, allelem);
+  while(child -> tid != child_tid)
   {
-    if (thread_current ()->ready_to_exit)
-      break;
+    child = list_entry(list_next(&(now->allelem)), struct thread, allelem);
   }
-  return -1;
+  while (child -> status != THREAD_DYING);
+  {}
 }
 
 /* Free the current process's resources. */
@@ -173,7 +173,6 @@ process_exit (void)
 {
   struct thread *cur = thread_current ();
   uint32_t *pd;
-  cur->ready_to_exit = true;
   /* Destroy the current process's page directory and switch back
      to the kernel-only page directory. */
   pd = cur->pagedir;
