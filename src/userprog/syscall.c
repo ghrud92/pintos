@@ -21,15 +21,15 @@ bool create (const char * file, unsigned initial_size)
     return false;
   else
   {
-    filesys_create (*file, *initial_size);
+    filesys_create (file, initial_size);
     return true;
   }
-} 
+}
 
 int open (const char * file)
 {
   static int nextfd = 2;
-  struct openedfile * opfile = new openedfile;
+  struct openedfile * opfile = malloc (sizeof(struct openedfile) * 1);
   if (file != NULL)
   {
     opfile -> file = filesys_open (*file);
