@@ -90,7 +90,7 @@ int write (int fd , const void * buffer , unsigned size )
 {
   if (fd == 1)
   {
-    putbuf (*buffer,size);
+    putbuf (buffer,size);
     return size;
   }
   else
@@ -100,7 +100,7 @@ int write (int fd , const void * buffer , unsigned size )
     {
       if ((now -> fd) == fd)
       {
-        return file_write (now -> file, *buffer, size);
+        return file_write (now -> file, buffer, size);
       }
       now = list_entry(list_next(&(now->opelem)), struct openedfile, opelem);
     } while(now->opelem.next != NULL);
@@ -108,12 +108,23 @@ int write (int fd , const void * buffer , unsigned size )
   }
 }
 
-bool address_check (void * addr)
+void address_check (void * addr)
 {
   if (!is_user_vaddr(addr) || !pagedir_get_page(thread_current()->pagedir, addr))
-    return false;
+    exit(-1);
   else
-	  return true;
+	  return;
+}
+
+void get_args (struct intr_frame * f, int * arg, int num_args)
+{
+  int * ptr;
+  for (int i = 0; i < num_args; i++)
+    {
+      ptr = (int *) f->esp + i + 1;
+      address_check((void *) ptr);
+      arg[i] = * ptr;
+    }
 }
 
 void
@@ -126,36 +137,31 @@ syscall_init (void)
 static void
 syscall_handler (struct intr_frame *f UNUSED)
 {
+  int args[100];
   int * ptr = f -> esp;
-  int i;
-  struct thread * cur = thread_current();
   switch (*ptr) {
     case SYS_HALT:
       halt();
       break;
     case SYS_CREATE:
-      if(!address_check(*(ptr+4)) || !address_check(ptr+5))
-        exit(-1);
-      create(ptr+4, *(ptr+5));
+      get_args(f, &args[0], 2);
+      f -> eax = create((char *) args[0], (unsigned) args[1]);
       break;
     case SYS_OPEN:
-      if(!address_check(*(ptr+1)))
-        exit(-1);
-      f -> eax = open (ptr+1);
+      get_args(f, &args[0], 1);
+      f -> eax = open((char *) args[0]);
       break;
     case SYS_CLOSE:
-      if(!address_check(ptr+1))
-        exit(-1);
-      close (*(ptr+1));
+      get_args(f, &args[0], 1);
+      close ((int) args[0]);
       break;
     case SYS_EXIT:
-      if(!address_check(ptr+1))
-        exit(-1);
-      exit(*(ptr+1));
+      get_args(f, &args[0], 1);
+      exit((int) args[0]);
+      break;
     case SYS_WRITE:
-      if(!address_check(*(ptr+6)));
-        exit(-1);
-        f -> eax = write(*(ptr+5), (ptr+6), *(ptr+7));
+      get_args(f, &args[0], 3);
+      f -> eax = write((int) args[0], (void *) args[1], (unsigned) args[2]);
       break;
   }
 }
