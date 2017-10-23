@@ -16,6 +16,7 @@
 #include "threads/interrupt.h"
 #include "threads/palloc.h"
 #include "threads/thread.h"
+// #include "threads/thread.c"
 #include "threads/vaddr.h"
 #include "threads/malloc.h"
 
