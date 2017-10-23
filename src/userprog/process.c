@@ -127,9 +127,10 @@ start_process (void *file_name_)
   // hex_dump (uintptr_t ofs, const void *buf_, size_t size, bool ascii);
   // hex_dump (0, if_.esp, 100, true);
 
-  // printf("%s %d\n", "1", *(int *)if_.esp);
-  // if_.esp += sizeof(int);
-  // printf("%s %d\n", "2", *(int *)if_.esp);
+  // void *esp = if_.esp;
+  // printf("%s %d\n", "1:", *(int *)esp);
+  // esp += sizeof(int);
+  // printf("%s %d\n", "2:", *(int *)esp);
 
   /* If load failed, quit. */
   palloc_free_page (file_name);

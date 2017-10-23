@@ -88,19 +88,23 @@ void exit (int status)
 
 int write (int fd , const void * buffer , unsigned size )
 {
+  printf("%s\n", "write");
+  printf("%s %d\n", "fd is", fd);
   if (fd == 1)
   {
-    putbuf (*buffer,size);
+    printf("%s\n", "fd is 1");
+    putbuf (buffer,size);
     return size;
   }
   else
   {
+    printf("%s\n", "fd is not 1");
     struct openedfile * now = list_entry(list_front(&opfilelist), struct openedfile, opelem);
     do
     {
       if ((now -> fd) == fd)
       {
-        return file_write (now -> file, *buffer, size);
+        return file_write (now -> file, buffer, size);
       }
       now = list_entry(list_next(&(now->opelem)), struct openedfile, opelem);
     } while(now->opelem.next != NULL);
@@ -110,6 +114,7 @@ int write (int fd , const void * buffer , unsigned size )
 
 bool address_check (void * addr)
 {
+  // return true;
   if (!is_user_vaddr(addr) || !pagedir_get_page(thread_current()->pagedir, addr))
     return false;
   else
@@ -126,36 +131,43 @@ syscall_init (void)
 static void
 syscall_handler (struct intr_frame *f UNUSED)
 {
+  printf("%s\n", "syscall handler");
   int * ptr = f -> esp;
-  int i;
   struct thread * cur = thread_current();
   switch (*ptr) {
     case SYS_HALT:
+      printf("%s\n", "halt");
       halt();
       break;
     case SYS_CREATE:
+      printf("%s\n", "create");
       if(!address_check(*(ptr+4)) || !address_check(ptr+5))
         exit(-1);
       create(ptr+4, *(ptr+5));
       break;
     case SYS_OPEN:
+      printf("%s\n", "open");
       if(!address_check(*(ptr+1)))
         exit(-1);
       f -> eax = open (ptr+1);
       break;
     case SYS_CLOSE:
+      printf("%s\n", "close");
       if(!address_check(ptr+1))
         exit(-1);
       close (*(ptr+1));
       break;
     case SYS_EXIT:
+      printf("%s\n", "exit");
       if(!address_check(ptr+1))
         exit(-1);
       exit(*(ptr+1));
+      break;
     case SYS_WRITE:
-      if(!address_check(*(ptr+6)));
+      printf("%s\n", "write");
+      if(!address_check(*(ptr+6)))
         exit(-1);
-        f -> eax = write(*(ptr+5), (ptr+6), *(ptr+7));
+      f -> eax = write(*(ptr+5), *(ptr+6), *(ptr+7));
       break;
   }
 }
