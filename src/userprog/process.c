@@ -160,8 +160,8 @@ start_process (void *file_name_)
 int
 process_wait (tid_t child_tid UNUSED)
 {
-  struct * child = tid_to_thread(child_tid);
-  while (child -> status != THREAD_DYING);
+  struct thread *child = tid_to_thread(child_tid);
+  while (child -> status != THREAD_DYING)
   {}
   return -1;
 }
