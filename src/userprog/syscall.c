@@ -8,6 +8,8 @@
 #include "filesys/file.h"
 #include "threads/vaddr.h"
 #include "userprog/pagedir.c"
+#include <list.h>
+
 
 static void syscall_handler (struct intr_frame *);
 
@@ -54,29 +56,32 @@ void close (int fd)
         list_remove(&(now->opelem));
         return;
       }
-      now = list_entry(list_next(&(now->elem)), struct openedfile, opelem);
-    } while(now->elem.next != NULL);
+      now = list_entry(list_next(&(now->opelem)), struct openedfile, opelem);
+    } while(now->opelem.next != NULL);
   }
   return;
-} 
+}
 
 void halt ()
 {
   shutdown_power_off();
-} 
+}
 
 void exit (int status)
 {
-  struct openedfile * now = list_entry(list_front(&opfilelist), struct openedfile, opelem);
-  do
+  if(!list_empty(&opfilelist))
   {
-    if (now -> caller == thread_current())
+    struct openedfile * now = list_entry(list_front(&opfilelist), struct openedfile, opelem);
+    do
     {
-      file_close (now -> file);
-      list_remove(&(now->opelem));
-    }
-    now = list_entry(list_next(&(now->elem)), struct openedfile, opelem);
-  } while(now->elem.next != NULL);
+      if (now -> caller == thread_current())
+      {
+        file_close (now -> file);
+        list_remove(&(now->opelem));
+      }
+      now = list_entry(list_next(&(now->opelem)), struct openedfile, opelem);
+    } while(now->opelem.next != NULL);
+  }
   thread_current()->exit_status = status;
   thread_exit();
 }
@@ -90,14 +95,14 @@ bool address_check (void * addr)
 }
 
 void
-syscall_init (void) 
+syscall_init (void)
 {
   intr_register_int (0x30, 3, INTR_ON, syscall_handler, "syscall");
   list_init (&opfilelist);
 }
 
 static void
-syscall_handler (struct intr_frame *f UNUSED) 
+syscall_handler (struct intr_frame *f UNUSED)
 {
   int * ptr = f -> esp;
   int i;
