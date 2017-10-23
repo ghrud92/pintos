@@ -16,6 +16,7 @@
 #include "threads/interrupt.h"
 #include "threads/palloc.h"
 #include "threads/thread.h"
+// #include "threads/thread.c"
 #include "threads/vaddr.h"
 #include "threads/malloc.h"
 
@@ -161,7 +162,7 @@ process_wait (tid_t child_tid UNUSED)
   struct thread * child = list_entry(list_front(&all_list), struct thread, allelem);
   while(child -> tid != child_tid)
   {
-    child = list_entry(list_next(&(now->allelem)), struct thread, allelem);
+    child = list_entry(list_next(&(child->allelem)), struct thread, allelem);
   }
   while (child -> status != THREAD_DYING);
   {}
