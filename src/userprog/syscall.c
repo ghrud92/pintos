@@ -32,7 +32,7 @@ int open (const char * file)
   struct openedfile * opfile = malloc (sizeof(struct openedfile) * 1);
   if (file != NULL)
   {
-    opfile -> file = filesys_open (*file);
+    opfile -> file = filesys_open (file);
     opfile -> fd = nextfd;
     opfile -> caller = thread_current();
     list_push_front (&opfilelist, &(opfile -> opelem));
@@ -57,7 +57,7 @@ void close (int fd)
         return;
       }
       now = list_entry(list_next(&(now->opelem)), struct openedfile, opelem);
-    } while(now->opelem.next != NULL);
+    } while(now->opelem.next == NULL);
   }
   return;
 }
@@ -82,14 +82,18 @@ void exit (int status)
       now = list_entry(list_next(&(now->opelem)), struct openedfile, opelem);
     } while(now->opelem.next != NULL);
   }
+  printf ("%s: exit(%d)\n", thread_current ()->name, status);
   thread_current()->exit_status = status;
   thread_exit();
 }
 
 int write (int fd , const void * buffer , unsigned size )
 {
-  printf("%s\n", "write");
-  printf("%s %d\n", "fd is", fd);
+  buffer = pagedir_get_page(thread_current()->pagedir, buffer);
+  if (!buffer)
+  {
+    exit(-1);
+  }
   if (fd == 1)
   {
     putbuf (buffer,size);
@@ -97,7 +101,6 @@ int write (int fd , const void * buffer , unsigned size )
   }
   else
   {
-    printf("%s\n", "fd is not 1");
     struct openedfile * now = list_entry(list_front(&opfilelist), struct openedfile, opelem);
     do
     {
@@ -123,7 +126,8 @@ void address_check (void * addr)
 void get_args (struct intr_frame * f, int * arg, int num_args)
 {
   int * ptr;
-  for (int i = 0; i < num_args; i++)
+  int i;
+  for (i = 0; i < num_args; i++)
     {
       ptr = (int *) f->esp + i + 1;
       address_check((void *) ptr);
@@ -145,7 +149,6 @@ syscall_handler (struct intr_frame *f UNUSED)
   int * ptr = f -> esp;
   switch (*ptr) {
     case SYS_HALT:
-      printf("%s\n", "halt");
       halt();
       break;
     case SYS_CREATE:
