@@ -195,9 +195,10 @@ int read (int fd, const void *buffer, unsigned size)
   if (fd == 1)
   {
     unsigned i;
+    int * temp_buffer = buffer;
     for (i = 0; i < size; i++)
     {
-      buffer[i] = input_getc();
+      temp_buffer[i] = input_getc();
       return size;
     }
   }
@@ -221,7 +222,7 @@ bool remove (const char *file)
   return filesys_remove (file);
 }
 
-pid_t exec (const char *cmd_line)
+int exec (const char *cmd_line)
 {
   return process_execute (cmd_line);
 }
