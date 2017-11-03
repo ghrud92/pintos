@@ -17,10 +17,16 @@ static struct list opfilelist;
 
 bool create (const char * file, unsigned initial_size)
 {
-  if (file == "")
-    printf("%s\n", "file is empty");
   if (file == NULL)
+  {
+    exit(-1);
     return false;
+  }
+  else if (file[0] == '\0')
+  {
+    exit(-1);
+    return false;
+  }
   else
   {
     filesys_create (file, initial_size);
