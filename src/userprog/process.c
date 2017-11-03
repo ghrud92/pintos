@@ -73,6 +73,13 @@ start_process (void *file_name_)
   if_.eflags = FLAG_IF | FLAG_MBS;
   success = load (file_name, &if_.eip, &if_.esp);
 
+  if (if_.esp != PHYS_BASE)
+  {
+    // printf("%s\n", "not PHYS BASE");
+    thread_exit();
+    return;
+  }
+
   char *token;
   char **argvs = malloc(MAX_ARGV_NUM * sizeof(char *));
   if (!argvs)
@@ -80,11 +87,6 @@ start_process (void *file_name_)
     return false;
   }
   int i, argc = 0;
-
-  // if (if_.esp == PHYS_BASE)
-  // {
-  //   printf("%s\n", "PHYS BASE");
-  // }
 
   // Push args onto stack
   for (token = file_name; token != NULL; token = strtok_r (NULL, " ", &save_ptr))

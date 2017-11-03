@@ -17,6 +17,8 @@ static struct list opfilelist;
 
 bool create (const char * file, unsigned initial_size)
 {
+  if (file == "")
+    printf("%s\n", "file is empty");
   if (file == NULL)
     return false;
   else
@@ -69,6 +71,7 @@ void halt ()
 
 void exit (int status)
 {
+  // printf("%s\n", "in exit syscall");
   if(!list_empty(&opfilelist))
   {
     struct openedfile * now = list_entry(list_front(&opfilelist), struct openedfile, opelem);
