@@ -135,6 +135,88 @@ void get_args (struct intr_frame * f, int * arg, int num_args)
     }
 }
 
+int filesize (int fd)
+{
+  struct openedfile * now = list_entry(list_front(&opfilelist), struct openedfile, opelem);
+  do
+  {
+    if ((now -> fd) == fd)
+    {
+      return file_length (now -> file);
+    }
+    now = list_entry(list_next(&(now->opelem)), struct openedfile, opelem);
+  } while(now->opelem.next != NULL);
+  return 0;
+}
+
+unsigned tell (int fd)
+{
+  struct openedfile * now = list_entry(list_front(&opfilelist), struct openedfile, opelem);
+  do
+  {
+    if ((now -> fd) == fd)
+    {
+      return file_tell (now -> file);
+    }
+    now = list_entry(list_next(&(now->opelem)), struct openedfile, opelem);
+  } while(now->opelem.next != NULL);
+  return 0;
+}
+
+void seek (int fd, unsigned position)
+{
+  struct openedfile * now = list_entry(list_front(&opfilelist), struct openedfile, opelem);
+  do
+  {
+    if ((now -> fd) == fd)
+    {
+      file_seek (now -> file, position);
+    }
+    now = list_entry(list_next(&(now->opelem)), struct openedfile, opelem);
+  } while(now->opelem.next != NULL);
+}
+
+int read (int fd, const void *buffer, unsigned size)
+{
+  buffer = pagedir_get_page(thread_current()->pagedir, buffer);
+  if (!buffer)
+  {
+    exit(-1);
+  }
+  if (fd == 1)
+  {
+    unsigned i;
+    for (i = 0; i < size; i++)
+    {
+      buffer[i] = input_getc();
+      return size;
+    }
+  }
+  else
+  {
+    struct openedfile * now = list_entry(list_front(&opfilelist), struct openedfile, opelem);
+    do
+    {
+      if ((now -> fd) == fd)
+      {
+        return file_read (now -> file, buffer, size);
+      }
+      now = list_entry(list_next(&(now->opelem)), struct openedfile, opelem);
+    } while(now->opelem.next != NULL);
+    return -1;
+  }
+}
+
+bool remove (const char *file)
+{
+  return filesys_remove (file);
+}
+
+pid_t exec (const char *cmd_line)
+{
+  return process_execute (cmd_line);
+}
+
 void
 syscall_init (void)
 {
@@ -170,6 +252,30 @@ syscall_handler (struct intr_frame *f UNUSED)
     case SYS_WRITE:
       get_args(f, &args[0], 3);
       f -> eax = write((int) args[0], (void *) args[1], (unsigned) args[2]);
+      break;
+    case SYS_FILESIZE:
+      get_args(f, &args[0], 1);
+      f -> eax = filesize((int) args[0]);
+      break;
+    case SYS_SEEK:
+      get_args(f, &args[0], 2);
+      seek((int) args[0], (unsigned) args[1]);
+      break;
+    case SYS_TELL:
+      get_args(f, &args[0], 1);
+      tell((int) args[0]);
+      break;
+    case SYS_READ:
+      get_args(f, &args[0], 3);
+      f -> eax = read ((int) args[0], (void *) args[1], (unsigned) args[2]);
+      break;
+    case SYS_REMOVE:
+      get_args(f, &args[0], 1);
+      f -> eax = remove ((char *) args[0]);
+      break;
+    case SYS_EXEC:
+      get_args(f, &args[0], 1);
+      f -> eax = exec ((char *) args[0]);
       break;
   }
 }
