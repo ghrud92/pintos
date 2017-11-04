@@ -587,12 +587,14 @@ allocate_tid (void)
 struct thread *
 tid_to_thread (tid_t finding_tid)
 {
+  if (list_empty(&all_list))
+    return NULL;
   struct thread * now = list_entry(list_front(&all_list), struct thread, allelem);
   while (now != NULL)
   {
     if (now -> tid == finding_tid)
       return now;
-    now = list_entry(list_next(&(now->allelem)), struct thread, allelem);
+    now = list_entry((now->allelem->next), struct thread, allelem);
   }
   return NULL;
 }
