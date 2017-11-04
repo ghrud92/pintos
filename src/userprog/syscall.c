@@ -17,12 +17,22 @@ static struct list opfilelist;
 
 bool create (const char * file, unsigned initial_size)
 {
+  // file name is NULL
+  // file has invlid address
+  // file length is 0
+  // if (file == NULL || file > PHYS_BASE || file[0] == '\0')
   if (file == NULL)
   {
     exit(-1);
     return false;
   }
-  else if (file[0] == '\0')
+  // if (file > PHYS_BASE)
+  // {
+  //   printf("%s\n", "here");
+  //   exit(-1);
+  //   return false;
+  // }
+  if (file[0] == '\0')
   {
     exit(-1);
     return false;
@@ -215,6 +225,12 @@ int read (int fd, const void *buffer, unsigned size)
 {
   // stdout fd
   if (fd == 1)
+  {
+    exit(-1);
+  }
+
+  // invalid buffer address
+  if (buffer > PHYS_BASE)
   {
     exit(-1);
   }
