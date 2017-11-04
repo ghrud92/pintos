@@ -27,11 +27,30 @@ bool create (const char * file, unsigned initial_size)
     exit(-1);
     return false;
   }
-  else
+
+  // check the length of name
+  char *temp = file;
+  int i = 0;
+  while(*temp != '\0')
   {
-    filesys_create (file, initial_size);
-    return true;
+    i++;
+    temp++;
+    if (i > 14)
+    {
+      return false;
+    }
   }
+
+  // check the file is already exist
+  int fd = open (file);
+  if (fd != -1)
+  {
+    close (fd);
+    return false;
+  }
+
+  filesys_create (file, initial_size);
+  return true;
 }
 
 int open (const char * file)
@@ -41,6 +60,8 @@ int open (const char * file)
   if (file != NULL)
   {
     opfile -> file = filesys_open (file);
+    if (opfile -> file == NULL)
+      return -1;
     opfile -> fd = nextfd;
     opfile -> caller = thread_current();
     list_push_front (&opfilelist, &(opfile -> opelem));
@@ -77,7 +98,6 @@ void halt ()
 
 void exit (int status)
 {
-  // printf("%s\n", "in exit syscall");
   if(!list_empty(&opfilelist))
   {
     struct openedfile * now = list_entry(list_front(&opfilelist), struct openedfile, opelem);
