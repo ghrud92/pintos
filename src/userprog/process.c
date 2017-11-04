@@ -174,7 +174,7 @@ process_wait (tid_t child_tid UNUSED)
   {
     thread_yield ();
   }
-  return child -> exit_status;
+  return thread_current() -> child_exit_status;
 }
 
 /* Free the current process's resources. */

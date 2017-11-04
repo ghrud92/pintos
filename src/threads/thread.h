@@ -95,7 +95,7 @@ struct thread
 #ifdef USERPROG
     /* Owned by userprog/process.c. */
     struct thread * parent;
-    int child_exit_status;
+    int child_exit_statuc;
     bool die;
     int exit_status;
     bool wait_target;
