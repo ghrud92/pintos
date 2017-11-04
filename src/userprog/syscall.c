@@ -118,6 +118,12 @@ void exit (int status)
 
 int write (int fd , const void * buffer , unsigned size )
 {
+  // stdin
+  if (fd == 0)
+  {
+    exit(-1);
+  }
+
   buffer = pagedir_get_page(thread_current()->pagedir, buffer);
   if (!buffer)
   {
@@ -209,14 +215,16 @@ int read (int fd, const void *buffer, unsigned size)
 {
   // stdout fd
   if (fd == 1)
+  {
     exit(-1);
+  }
 
   buffer = pagedir_get_page(thread_current()->pagedir, buffer);
   if (!buffer)
   {
     exit(-1);
   }
-  
+
   // stdin
   if (fd == 0)
   {
