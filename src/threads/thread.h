@@ -94,8 +94,10 @@ struct thread
 
 #ifdef USERPROG
     /* Owned by userprog/process.c. */
+    struct thread * parent;
     bool die;
     int exit_status;
+    bool wait_target;
     uint32_t *pagedir;                  /* Page directory. */
 #endif
 
