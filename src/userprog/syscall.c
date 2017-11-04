@@ -253,6 +253,11 @@ int exec (const char *cmd_line)
   return process_execute (cmd_line);
 }
 
+int wait (int pid)
+{
+  return process_wait (pid);
+}
+
 void
 syscall_init (void)
 {
@@ -312,6 +317,10 @@ syscall_handler (struct intr_frame *f UNUSED)
     case SYS_EXEC:
       get_args(f, &args[0], 1);
       f -> eax = exec ((char *) args[0]);
+      break;
+    case SYS_WAIT:
+      get_args(f, &args[0], 1);
+      f -> eax = wait ((char *) args[0]);
       break;
   }
 }
