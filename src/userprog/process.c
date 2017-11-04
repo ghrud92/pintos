@@ -49,7 +49,6 @@ process_execute (const char *file_name)
 
   tid = thread_create (file_name, PRI_DEFAULT, start_process, fn_copy);
   struct thread *child = tid_to_thread (tid);
-  child -> parent = thread_current();
   if (tid == TID_ERROR)
     palloc_free_page (fn_copy);
   return tid;
