@@ -48,7 +48,8 @@ process_execute (const char *file_name)
   file_name = strtok_r (file_name, " ", &save_ptr);
 
   tid = thread_create (file_name, PRI_DEFAULT, start_process, fn_copy);
-  tid_to_thread(tid) -> parent = thread_current();
+  struct thread *child = tid_to_thread (tid);
+  child -> parent = thread_current();
   if (tid == TID_ERROR)
     palloc_free_page (fn_copy);
   return tid;
@@ -163,7 +164,7 @@ int
 process_wait (tid_t child_tid UNUSED)
 {
   struct thread* child = tid_to_thread(child_tid);
-  
+
   if (!child | child -> wait_target | child -> parent != thread_current())
   {
     return -1;
