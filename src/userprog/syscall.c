@@ -12,26 +12,23 @@
 
 
 static void syscall_handler (struct intr_frame *);
+void check_address (const void*);
 
 static struct list opfilelist;
 
 bool create (const char * file, unsigned initial_size)
 {
   // file name is NULL
-  // file has invlid address
-  // file length is 0
-  // if (file == NULL || file > PHYS_BASE || file[0] == '\0')
   if (file == NULL)
   {
     exit(-1);
     return false;
   }
-  // if (file > PHYS_BASE)
-  // {
-  //   printf("%s\n", "here");
-  //   exit(-1);
-  //   return false;
-  // }
+
+  // check whether the file pointer is valid
+  check_address(file);
+
+  // the length of file name is 0
   if (file[0] == '\0')
   {
     exit(-1);
@@ -65,6 +62,9 @@ bool create (const char * file, unsigned initial_size)
 
 int open (const char * file)
 {
+  // check whether the file pointer is valid
+  check_address(file);
+
   static int nextfd = 2;
   struct openedfile * opfile = malloc (sizeof(struct openedfile) * 1);
   if (file != NULL)
@@ -128,17 +128,15 @@ void exit (int status)
 
 int write (int fd , const void * buffer , unsigned size )
 {
+  // check whether the buffer address is valid or not
+  check_address(buffer);
+
   // stdin
   if (fd == 0)
   {
     exit(-1);
   }
 
-  buffer = pagedir_get_page(thread_current()->pagedir, buffer);
-  if (!buffer)
-  {
-    exit(-1);
-  }
   if (fd == 1)
   {
     putbuf (buffer,size);
@@ -146,6 +144,12 @@ int write (int fd , const void * buffer , unsigned size )
   }
   else
   {
+    // if there is no opened file
+    if (list_empty(&opfilelist))
+    {
+      return -1;
+    }
+    
     struct openedfile * now = list_entry(list_front(&opfilelist), struct openedfile, opelem);
     do
     {
@@ -223,20 +227,11 @@ void seek (int fd, unsigned position)
 
 int read (int fd, const void *buffer, unsigned size)
 {
+  // check whether the buffer address is valid or not
+  check_address(buffer);
+
   // stdout fd
   if (fd == 1)
-  {
-    exit(-1);
-  }
-
-  // invalid buffer address
-  if (buffer > PHYS_BASE)
-  {
-    exit(-1);
-  }
-
-  buffer = pagedir_get_page(thread_current()->pagedir, buffer);
-  if (!buffer)
   {
     exit(-1);
   }
@@ -254,6 +249,12 @@ int read (int fd, const void *buffer, unsigned size)
   }
   else
   {
+    // if there is no opened file
+    if (list_empty(&opfilelist))
+    {
+      return -1;
+    }
+
     struct openedfile * now = list_entry(list_front(&opfilelist), struct openedfile, opelem);
     do
     {
@@ -347,4 +348,24 @@ syscall_handler (struct intr_frame *f UNUSED)
       f -> eax = wait ((char *) args[0]);
       break;
   }
+}
+
+void check_address (const void* addr)
+{
+  // check the address is in the user virtual space
+  if (!is_user_vaddr (addr))
+  {
+    // printf("%s\n", "@@@@@@@@@@@@");
+    exit(-1);
+    return false;
+  }
+
+  // check the address is valid
+  void *ptr = pagedir_get_page(thread_current()->pagedir, addr);
+	if (!ptr)
+	{
+    // printf("%s\n", "############");
+		exit(-1);
+		return 0;
+	}
 }

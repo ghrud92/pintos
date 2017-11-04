@@ -587,6 +587,8 @@ allocate_tid (void)
 struct thread *
 tid_to_thread (tid_t finding_tid)
 {
+  if (list_empty (&all_list))
+    return NULL;
   struct thread * now = list_entry(list_front(&all_list), struct thread, allelem);
   while (now != NULL)
   {
