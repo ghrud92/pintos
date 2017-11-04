@@ -200,6 +200,7 @@ process_exit (void)
       pagedir_activate (NULL);
       pagedir_destroy (pd);
     }
+  cur -> parent -> child_exit_status = cur -> exit_status;
   cur -> die = true;
 }
 
