@@ -43,7 +43,6 @@ process_execute (const char *file_name)
   strlcpy (fn_copy, file_name, PGSIZE);
 
   /* Create a new thread to execute FILE_NAME. */
-  // my code
   char *save_ptr;
   file_name = strtok_r (file_name, " ", &save_ptr);
 
@@ -74,6 +73,13 @@ start_process (void *file_name_)
   if_.cs = SEL_UCSEG;
   if_.eflags = FLAG_IF | FLAG_MBS;
   success = load (file_name, &if_.eip, &if_.esp);
+
+  /* If load failed, quit. */
+  if (!success)
+  {
+    palloc_free_page (file_name);
+    thread_exit ();
+  }
 
   if (if_.esp != PHYS_BASE)
   {
@@ -137,9 +143,9 @@ start_process (void *file_name_)
   // printf("%s %d\n", "2:", *(int *)esp);
 
   /* If load failed, quit. */
-  palloc_free_page (file_name);
-  if (!success)
-    thread_exit ();
+  // palloc_free_page (file_name);
+  // if (!success)
+  //   thread_exit ();
 
   /* Start the user process by simulating a return from an
      interrupt, implemented by intr_exit (in

@@ -149,7 +149,7 @@ int write (int fd , const void * buffer , unsigned size )
     {
       return -1;
     }
-    
+
     struct openedfile * now = list_entry(list_front(&opfilelist), struct openedfile, opelem);
     do
     {
@@ -275,7 +275,28 @@ bool remove (const char *file)
 
 int exec (const char *cmd_line)
 {
-  return process_execute (cmd_line);
+  // change the address from kernel to user memory
+  void *user_memory = pagedir_get_page(thread_current()->pagedir, cmd_line);
+  if (!user_memory)
+  {
+    exit(-1);
+  }
+
+  // check the process is exist or not
+  // char *name = palloc_get_page (0);
+  // if (name == NULL)
+  //   return TID_ERROR;
+  // strlcpy (name, user_memory, PGSIZE);
+  // char *save_ptr;
+  // name = strtok_r (name, " ", &save_ptr);
+  // int fd = open(name);
+  // if (fd == -1)
+  // {
+  //   return -1;
+  // }
+  //
+  // close(fd);
+  return process_execute (user_memory);
 }
 
 int wait (int pid)
@@ -345,7 +366,7 @@ syscall_handler (struct intr_frame *f UNUSED)
       break;
     case SYS_WAIT:
       get_args(f, &args[0], 1);
-      f -> eax = wait ((char *) args[0]);
+      f -> eax = wait ((int) args[0]);
       break;
   }
 }
