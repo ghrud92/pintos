@@ -345,7 +345,7 @@ syscall_handler (struct intr_frame *f UNUSED)
       break;
     case SYS_WAIT:
       get_args(f, &args[0], 1);
-      f -> eax = wait ((char *) args[0]);
+      f -> eax = wait ((int) args[0]);
       break;
   }
 }
