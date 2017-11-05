@@ -594,6 +594,8 @@ tid_to_thread (tid_t finding_tid)
   {
     if (now -> tid == finding_tid)
       return now;
+    if (now == list_entry(list_end(&all_list), struct thread, allelem))
+      break;
     now = list_entry(list_next(&(now->allelem)), struct thread, allelem);
   }
   return NULL;
