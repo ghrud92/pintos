@@ -328,9 +328,9 @@ int exec (const char *cmd_line)
   {
     exit(-1);
   }
-  lock_acquire(&file_lock);
+  // lock_acquire(&file_lock);
     int result = process_execute (user_memory);
-  lock_release(&file_lock);
+  // lock_release(&file_lock);
   return result;
 }
 

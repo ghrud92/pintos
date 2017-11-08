@@ -49,11 +49,18 @@ process_execute (const char *file_name)
   tid = thread_create (file_name, PRI_DEFAULT, start_process, fn_copy);
   struct thread *child = tid_to_thread (tid);
   child -> parent = thread_current();
-  process_wait(tid);
-  if (child->tid < 0)
+  child -> parent -> before_child_load = true;
+
+  // wait until child thread call load function
+  while (thread_current()->before_child_load)
   {
-    tid = -1;
-    // palloc_free_page (fn_copy);
+    thread_yield ();
+  }
+
+  // if child thread fail to load, return -1
+  if (thread_current()->child_exit_status == TID_ERROR)
+  {
+    return TID_ERROR;
   }
 
   return tid;
@@ -83,12 +90,14 @@ start_process (void *file_name_)
   /* If load failed, quit. */
   if (!success)
   {
-    // printf("%s\n", "###");
-    // printf ("%s: exit(%d)\n", thread_current ()->name, -1);
-    thread_current()->tid = TID_ERROR;
+    thread_current() -> exit_status = TID_ERROR;
+    thread_current()->parent->child_exit_status = TID_ERROR;
+    thread_current()->parent->before_child_load = false;
     palloc_free_page (file_name);
     thread_exit ();
   }
+
+  thread_current()->parent->before_child_load = false;
 
   if (if_.esp != PHYS_BASE)
   {
