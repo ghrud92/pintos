@@ -137,8 +137,9 @@ void exit (int status)
     {
       if (now -> caller == thread_current())
       {
-        // printf("%s %d\n", "file close", now->fd);
+        lock_acquire(&file_lock);
         file_close (now -> file);
+        lock_release(&file_lock);
         list_remove(&(now->opelem));
         free(now);
         break;
