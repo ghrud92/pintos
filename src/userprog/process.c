@@ -49,8 +49,13 @@ process_execute (const char *file_name)
   tid = thread_create (file_name, PRI_DEFAULT, start_process, fn_copy);
   struct thread *child = tid_to_thread (tid);
   child -> parent = thread_current();
-  if (tid == TID_ERROR)
-    palloc_free_page (fn_copy);
+  process_wait(tid);
+  if (child->tid < 0)
+  {
+    tid = -1;
+    // palloc_free_page (fn_copy);
+  }
+
   return tid;
 }
 
@@ -73,6 +78,7 @@ start_process (void *file_name_)
   if_.cs = SEL_UCSEG;
   if_.eflags = FLAG_IF | FLAG_MBS;
   success = load (file_name, &if_.eip, &if_.esp);
+  // printf("%s %d\n", "after the load function", thread_current()->tid);
 
   /* If load failed, quit. */
   if (!success)
@@ -81,7 +87,7 @@ start_process (void *file_name_)
     // printf ("%s: exit(%d)\n", thread_current ()->name, -1);
     thread_current()->tid = TID_ERROR;
     palloc_free_page (file_name);
-    // thread_exit ();
+    thread_exit ();
   }
 
   if (if_.esp != PHYS_BASE)
