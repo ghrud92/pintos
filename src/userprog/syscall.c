@@ -134,7 +134,9 @@ void exit (int status)
     {
       if (now -> caller == thread_current())
       {
+        lock_acquire(&file_lock);
         file_close (now -> file);
+        lock_release(&file_lock);
         list_remove(&(now->opelem));
       }
       now = list_entry(list_next(&(now->opelem)), struct openedfile, opelem);
