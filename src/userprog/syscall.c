@@ -66,10 +66,11 @@ bool create (const char * file, unsigned initial_size)
     return false;
   }
 
+  bool success;
   lock_acquire(&file_lock);
-  filesys_create (file, initial_size);
+  success = filesys_create (file, initial_size);
   lock_release (&file_lock);
-  return true;
+  return success;
 }
 
 int open (const char * file)
@@ -146,6 +147,7 @@ void exit (int status)
   thread_current()->exit_status = status;
   thread_exit();
 }
+
 
 int write (int fd , const void * buffer , unsigned size )
 {
@@ -321,8 +323,10 @@ int exec (const char *cmd_line)
   {
     exit(-1);
   }
-
-  return process_execute (user_memory);
+  lock_acquire(&file_lock);
+    int result = process_execute (user_memory);
+  lock_release(&file_lock);
+  return result;
 }
 
 int wait (int pid)

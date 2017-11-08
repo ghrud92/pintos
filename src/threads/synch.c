@@ -118,6 +118,7 @@ sema_up (struct semaphore *sema)
     thread_unblock (list_entry (list_pop_front (&sema->waiters),
                                 struct thread, elem));
   sema->value++;
+  thread_current() -> once_waited = false;
   intr_set_level (old_level);
 }
 
