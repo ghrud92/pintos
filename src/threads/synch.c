@@ -66,9 +66,10 @@ sema_down (struct semaphore *sema)
   ASSERT (!intr_context ());
 
   old_level = intr_disable ();
-  while (sema->value == 0 || !list_empty (&sema->waiters))
+  while (sema->value == 0 || (!list_empty (&sema->waiters) && !(thread_current ()->once_waited)))
     {
       list_push_back (&sema->waiters, &thread_current ()->elem);
+      thread_current ()->once_waited = true;
       thread_block ();
     }
   sema->value--;
