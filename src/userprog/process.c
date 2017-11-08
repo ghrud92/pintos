@@ -77,6 +77,8 @@ start_process (void *file_name_)
   /* If load failed, quit. */
   if (!success)
   {
+    // printf("%s\n", "###");
+    // printf ("%s: exit(%d)\n", thread_current ()->name, -1);
     palloc_free_page (file_name);
     thread_exit ();
   }
@@ -92,6 +94,7 @@ start_process (void *file_name_)
   char **argvs = malloc(MAX_ARGV_NUM * sizeof(char *));
   if (!argvs)
   {
+    free(argvs);
     return false;
   }
   int i, argc = 0;
@@ -133,6 +136,8 @@ start_process (void *file_name_)
   memcpy(if_.esp, &argvs[argc], sizeof(void *));
   // Free argv
   free(argvs);
+
+  // free(file_name);
 
   // hex_dump (uintptr_t ofs, const void *buf_, size_t size, bool ascii);
   // hex_dump (0, if_.esp, 100, true);
