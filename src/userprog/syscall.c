@@ -9,12 +9,22 @@
 #include "threads/vaddr.h"
 #include "userprog/pagedir.h"
 #include <list.h>
+#include "threads/synch.h"
 
 
 static void syscall_handler (struct intr_frame *);
-void check_address (const void*);
 
 static struct list opfilelist;
+struct lock file_lock;
+
+void address_check (void * addr)
+{
+  // return true;
+  if (!is_user_vaddr(addr) || !pagedir_get_page(thread_current()->pagedir, addr))
+    exit(-1);
+  else
+	  return;
+}
 
 bool create (const char * file, unsigned initial_size)
 {
@@ -26,7 +36,7 @@ bool create (const char * file, unsigned initial_size)
   }
 
   // check whether the file pointer is valid
-  check_address(file);
+  address_check(file);
 
   // the length of file name is 0
   if (file[0] == '\0')
@@ -56,26 +66,33 @@ bool create (const char * file, unsigned initial_size)
     return false;
   }
 
+  lock_acquire(&file_lock);
   filesys_create (file, initial_size);
+  lock_release (&file_lock);
   return true;
 }
 
 int open (const char * file)
 {
   // check whether the file pointer is valid
-  check_address(file);
+  address_check(file);
 
   static int nextfd = 2;
   struct openedfile * opfile = malloc (sizeof(struct openedfile) * 1);
   if (file != NULL)
   {
+    lock_acquire(&file_lock);
     opfile -> file = filesys_open (file);
     if (opfile -> file == NULL)
+    {
+      lock_release(&file_lock);
       return -1;
+    }
     opfile -> fd = nextfd;
     opfile -> caller = thread_current();
     list_push_front (&opfilelist, &(opfile -> opelem));
     nextfd++;
+    lock_release(&file_lock);
     return opfile -> fd;
   }
   else
@@ -91,7 +108,9 @@ void close (int fd)
     {
       if (now -> fd == fd)
       {
+        lock_acquire(&file_lock);
         file_close (now -> file);
+        lock_release(&file_lock);
         list_remove(&(now->opelem));
         return;
       }
@@ -129,7 +148,8 @@ void exit (int status)
 int write (int fd , const void * buffer , unsigned size )
 {
   // check whether the buffer address is valid or not
-  check_address(buffer);
+  // address_check(&buffer);
+  address_check(buffer);
 
   // stdin
   if (fd == 0)
@@ -150,30 +170,27 @@ int write (int fd , const void * buffer , unsigned size )
       return -1;
     }
 
+    lock_acquire(&file_lock);
+    int byte = 0;
     struct openedfile * now = list_entry(list_front(&opfilelist), struct openedfile, opelem);
     do
     {
       if ((now -> fd) == fd)
       {
-        return file_write (now -> file, buffer, size);
+        byte = file_write (now -> file, buffer, size);
+        break;
       }
       now = list_entry(list_next(&(now->opelem)), struct openedfile, opelem);
     } while(now->opelem.next != NULL);
-    return 0;
-  }
-}
+    lock_release(&file_lock);
 
-void address_check (void * addr)
-{
-  // return true;
-  if (!is_user_vaddr(addr) || !pagedir_get_page(thread_current()->pagedir, addr))
-    exit(-1);
-  else
-	  return;
+    return byte;
+  }
 }
 
 void get_args (struct intr_frame * f, int * arg, int num_args)
 {
+  address_check(f->esp);
   int * ptr;
   int i;
   for (i = 0; i < num_args; i++)
@@ -186,30 +203,40 @@ void get_args (struct intr_frame * f, int * arg, int num_args)
 
 int filesize (int fd)
 {
+  int size = 0;
   struct openedfile * now = list_entry(list_front(&opfilelist), struct openedfile, opelem);
+  lock_acquire(&file_lock);
   do
   {
     if ((now -> fd) == fd)
     {
-      return file_length (now -> file);
+      size = file_length (now -> file);
+      break;
     }
     now = list_entry(list_next(&(now->opelem)), struct openedfile, opelem);
   } while(now->opelem.next != NULL);
-  return 0;
+  lock_release (&file_lock);
+
+  return size;
 }
 
 unsigned tell (int fd)
 {
+  off_t offset = 0;
   struct openedfile * now = list_entry(list_front(&opfilelist), struct openedfile, opelem);
   do
   {
     if ((now -> fd) == fd)
     {
-      return file_tell (now -> file);
+      lock_acquire(&file_lock);
+      offset = file_tell (now -> file);
+      lock_release(&file_lock);
+      break;
     }
     now = list_entry(list_next(&(now->opelem)), struct openedfile, opelem);
   } while(now->opelem.next != NULL);
-  return 0;
+
+  return offset;
 }
 
 void seek (int fd, unsigned position)
@@ -219,7 +246,9 @@ void seek (int fd, unsigned position)
   {
     if ((now -> fd) == fd)
     {
+      lock_acquire(&file_lock);
       file_seek (now -> file, position);
+      lock_release(&file_lock);
     }
     now = list_entry(list_next(&(now->opelem)), struct openedfile, opelem);
   } while(now->opelem.next != NULL);
@@ -228,7 +257,7 @@ void seek (int fd, unsigned position)
 int read (int fd, const void *buffer, unsigned size)
 {
   // check whether the buffer address is valid or not
-  check_address(buffer);
+  address_check(buffer);
 
   // stdout fd
   if (fd == 1)
@@ -255,22 +284,31 @@ int read (int fd, const void *buffer, unsigned size)
       return -1;
     }
 
+    int byte = -1;
+    lock_acquire(&file_lock);
     struct openedfile * now = list_entry(list_front(&opfilelist), struct openedfile, opelem);
     do
     {
       if ((now -> fd) == fd)
       {
-        return file_read (now -> file, buffer, size);
+        byte = file_read (now -> file, buffer, size);
+        break;
       }
       now = list_entry(list_next(&(now->opelem)), struct openedfile, opelem);
     } while(now->opelem.next != NULL);
-    return -1;
+    lock_release(&file_lock);
+
+    return byte;
   }
 }
 
 bool remove (const char *file)
 {
-  return filesys_remove (file);
+  bool success;
+  lock_acquire(&file_lock);
+  success = filesys_remove (file);
+  lock_release(&file_lock);
+  return success;
 }
 
 int exec (const char *cmd_line)
@@ -282,20 +320,6 @@ int exec (const char *cmd_line)
     exit(-1);
   }
 
-  // check the process is exist or not
-  // char *name = palloc_get_page (0);
-  // if (name == NULL)
-  //   return TID_ERROR;
-  // strlcpy (name, user_memory, PGSIZE);
-  // char *save_ptr;
-  // name = strtok_r (name, " ", &save_ptr);
-  // int fd = open(name);
-  // if (fd == -1)
-  // {
-  //   return -1;
-  // }
-  //
-  // close(fd);
   return process_execute (user_memory);
 }
 
@@ -307,6 +331,7 @@ int wait (int pid)
 void
 syscall_init (void)
 {
+  lock_init(&file_lock);
   intr_register_int (0x30, 3, INTR_ON, syscall_handler, "syscall");
   list_init (&opfilelist);
 }
@@ -315,6 +340,7 @@ static void
 syscall_handler (struct intr_frame *f UNUSED)
 {
   int args[100];
+  address_check (f->esp);
   int * ptr = f -> esp;
   switch (*ptr) {
     case SYS_HALT:
@@ -369,24 +395,4 @@ syscall_handler (struct intr_frame *f UNUSED)
       f -> eax = wait ((int) args[0]);
       break;
   }
-}
-
-void check_address (const void* addr)
-{
-  // check the address is in the user virtual space
-  if (!is_user_vaddr (addr))
-  {
-    // printf("%s\n", "@@@@@@@@@@@@");
-    exit(-1);
-    return false;
-  }
-
-  // check the address is valid
-  void *ptr = pagedir_get_page(thread_current()->pagedir, addr);
-	if (!ptr)
-	{
-    // printf("%s\n", "############");
-		exit(-1);
-		return 0;
-	}
 }
