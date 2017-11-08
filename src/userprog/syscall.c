@@ -110,13 +110,20 @@ void close (int fd)
     {
       if (now -> fd == fd)
       {
-        // printf("%s %d\n", "file close", fd);
-        lock_acquire(&file_lock);
-        file_close (now -> file);
-        lock_release(&file_lock);
-        list_remove(&(now->opelem));
-        free(now);
-        return;
+        if (now -> caller -> tid == thread_current() -> tid)
+        {
+          lock_acquire(&file_lock);
+          file_close (now -> file);
+          lock_release(&file_lock);
+          list_remove(&(now->opelem));
+          free(now);
+          return;
+        }
+        else
+        {
+          exit(-1);
+          return;
+        }
       }
       now = list_entry(list_next(&(now->opelem)), struct openedfile, opelem);
     } while(now->opelem.next == NULL);
