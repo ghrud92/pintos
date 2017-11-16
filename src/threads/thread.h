@@ -97,6 +97,7 @@ struct thread
     /* Owned by userprog/process.c. */
     struct thread * parent;
     int child_exit_status;
+    bool before_child_load;
     bool die;
     int exit_status;
     bool wait_target;

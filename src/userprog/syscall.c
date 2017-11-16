@@ -89,6 +89,7 @@ int open (const char * file)
       lock_release(&file_lock);
       return -1;
     }
+    // printf("%s %d\n", "file open", nextfd);
     opfile -> fd = nextfd;
     opfile -> caller = thread_current();
     list_push_front (&opfilelist, &(opfile -> opelem));
@@ -109,11 +110,20 @@ void close (int fd)
     {
       if (now -> fd == fd)
       {
-        lock_acquire(&file_lock);
-        file_close (now -> file);
-        lock_release(&file_lock);
-        list_remove(&(now->opelem));
-        return;
+        if (now -> caller -> tid == thread_current() -> tid)
+        {
+          lock_acquire(&file_lock);
+          file_close (now -> file);
+          lock_release(&file_lock);
+          list_remove(&(now->opelem));
+          free(now);
+          return;
+        }
+        else
+        {
+          exit(-1);
+          return;
+        }
       }
       now = list_entry(list_next(&(now->opelem)), struct openedfile, opelem);
     } while(now->opelem.next == NULL);
@@ -139,6 +149,8 @@ void exit (int status)
         file_close (now -> file);
         lock_release(&file_lock);
         list_remove(&(now->opelem));
+        free(now);
+        break;
       }
       now = list_entry(list_next(&(now->opelem)), struct openedfile, opelem);
     } while(now->opelem.next != NULL);
@@ -323,7 +335,9 @@ int exec (const char *cmd_line)
   {
     exit(-1);
   }
+  // lock_acquire(&file_lock);
     int result = process_execute (user_memory);
+  // lock_release(&file_lock);
   return result;
 }
 

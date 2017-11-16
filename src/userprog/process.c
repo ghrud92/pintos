@@ -49,8 +49,20 @@ process_execute (const char *file_name)
   tid = thread_create (file_name, PRI_DEFAULT, start_process, fn_copy);
   struct thread *child = tid_to_thread (tid);
   child -> parent = thread_current();
-  if (tid == TID_ERROR)
-    palloc_free_page (fn_copy);
+  child -> parent -> before_child_load = true;
+
+  // wait until child thread call load function
+  while (thread_current()->before_child_load)
+  {
+    thread_yield ();
+  }
+
+  // if child thread fail to load, return -1
+  if (thread_current()->child_exit_status == TID_ERROR)
+  {
+    return TID_ERROR;
+  }
+
   return tid;
 }
 
@@ -73,13 +85,19 @@ start_process (void *file_name_)
   if_.cs = SEL_UCSEG;
   if_.eflags = FLAG_IF | FLAG_MBS;
   success = load (file_name, &if_.eip, &if_.esp);
+  // printf("%s %d\n", "after the load function", thread_current()->tid);
 
   /* If load failed, quit. */
   if (!success)
   {
+    thread_current() -> exit_status = TID_ERROR;
+    thread_current()->parent->child_exit_status = TID_ERROR;
+    thread_current()->parent->before_child_load = false;
     palloc_free_page (file_name);
     thread_exit ();
   }
+
+  thread_current()->parent->before_child_load = false;
 
   if (if_.esp != PHYS_BASE)
   {
@@ -92,6 +110,7 @@ start_process (void *file_name_)
   char **argvs = malloc(MAX_ARGV_NUM * sizeof(char *));
   if (!argvs)
   {
+    free(argvs);
     return false;
   }
   int i, argc = 0;
@@ -133,19 +152,6 @@ start_process (void *file_name_)
   memcpy(if_.esp, &argvs[argc], sizeof(void *));
   // Free argv
   free(argvs);
-
-  // hex_dump (uintptr_t ofs, const void *buf_, size_t size, bool ascii);
-  // hex_dump (0, if_.esp, 100, true);
-
-  // void *esp = if_.esp;
-  // printf("%s %d\n", "1:", *(int *)esp);
-  // esp += sizeof(int);
-  // printf("%s %d\n", "2:", *(int *)esp);
-
-  /* If load failed, quit. */
-  // palloc_free_page (file_name);
-  // if (!success)
-  //   thread_exit ();
 
   /* Start the user process by simulating a return from an
      interrupt, implemented by intr_exit (in
