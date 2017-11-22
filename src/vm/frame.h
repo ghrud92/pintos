@@ -16,6 +16,7 @@ struct frame
 struct list frame_table;
 
 void init_table(void);  // initialize frame table
-void* get_free_frame(void); // find a free frame
+void* get_free_frame(enum palloc_flags); // find a free frame
+void free_frame(void*);  // free an existing frame
 
 #endif /* vm/frame.h */
