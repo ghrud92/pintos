@@ -102,6 +102,7 @@ struct thread
     int exit_status;
     bool wait_target;
     uint32_t *pagedir;                  /* Page directory. */
+    struct list page_table;
 #endif
 
     /* Owned by thread.c. */
