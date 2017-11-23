@@ -495,6 +495,8 @@ load_segment (struct file *file, off_t ofs, uint8_t *upage,
   ASSERT (ofs % PGSIZE == 0);
 
   file_seek (file, ofs);
+
+  int page_num = 0;
   while (read_bytes > 0 || zero_bytes > 0)
     {
       /* Calculate how to fill this page.
@@ -504,27 +506,42 @@ load_segment (struct file *file, off_t ofs, uint8_t *upage,
       size_t page_zero_bytes = PGSIZE - page_read_bytes;
 
       /* Get a page of memory. */
-      // uint8_t *kpage = palloc_get_page (PAL_USER);
-      uint8_t *kpage = get_free_frame(PAL_USER);
-      if (kpage == NULL)
-        return false;
+      struct page* page = malloc(sizeof(struct page));
+      page -> table_number = page_num;
+      page -> valid_bit = false;
+      page -> file = file;
+      page -> offset = ofs;
+      page -> read_bytes = read_bytes;
+      page -> zero_bytes = zero_bytes;
+      page -> writable = writable;
+      page -> upage = upage;
 
-      /* Load this page. */
-      if (file_read (file, kpage, page_read_bytes) != (int) page_read_bytes)
-        {
-          // palloc_free_page (kpage);
-          free_frame(kpage);
-          return false;
-        }
-      memset (kpage + page_read_bytes, 0, page_zero_bytes);
+      list_push_back (&thread_current() -> page_table, &page -> elem);
 
-      /* Add the page to the process's address space. */
-      if (!install_page (upage, kpage, writable))
-        {
-          // palloc_free_page (kpage);
-          free_frame (kpage);
-          return false;
-        }
+      page_num++;
+
+
+      // // uint8_t *kpage = palloc_get_page (PAL_USER);
+      // uint8_t *kpage = get_free_frame(PAL_USER);
+      // if (kpage == NULL)
+      //   return false;
+      //
+      // /* Load this page. */
+      // if (file_read (file, kpage, page_read_bytes) != (int) page_read_bytes)
+      //   {
+      //     // palloc_free_page (kpage);
+      //     free_frame(kpage);
+      //     return false;
+      //   }
+      // memset (kpage + page_read_bytes, 0, page_zero_bytes);
+      //
+      // /* Add the page to the process's address space. */
+      // if (!install_page (upage, kpage, writable))
+      //   {
+      //     // palloc_free_page (kpage);
+      //     free_frame (kpage);
+      //     return false;
+      //   }
 
       /* Advance. */
       read_bytes -= page_read_bytes;
