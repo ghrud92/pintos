@@ -77,3 +77,20 @@ void free_frame(void* memory)
     }
   }
 }
+
+struct frame *
+number_to_frame (tid_t finding_no)
+{
+  if (list_empty(&frame_table))
+    return NULL;
+  struct frame * now = list_entry(list_front(&frame_table), struct frame, elem);
+  while (now != NULL)
+  {
+    if (now -> frame_number == finding_no)
+      return now;
+    if (now == list_entry(list_end(&frame_table), struct frame, elem))
+      break;
+    now = list_entry(list_next(&(now->elem)), struct frame, elem);
+  }
+  return NULL;
+}
