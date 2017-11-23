@@ -8,6 +8,7 @@
 
 struct frame
 {
+  int frame_number;
   void* memory;
   int tid;
   struct list_elem elem;
