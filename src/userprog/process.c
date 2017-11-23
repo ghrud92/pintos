@@ -19,6 +19,7 @@
 #include "threads/vaddr.h"
 #include "threads/malloc.h"
 #include "vm/frame.h"
+#include "vm/page.h"
 
 #define WORD_SIZE 4
 #define MAX_ARGV_NUM 1024
@@ -80,6 +81,9 @@ start_process (void *file_name_)
   // Get actual file name (first parsed token)
   char *save_ptr;
   file_name = strtok_r(file_name, " ", &save_ptr);
+
+  // Initialize page table
+  init_page_table(&thread_current() -> page_table);
 
   /* Initialize interrupt frame and load executable. */
   memset (&if_, 0, sizeof if_);
@@ -197,6 +201,7 @@ void
 process_exit (void)
 {
   struct thread *cur = thread_current ();
+  destroy_page_table(&cur -> page_table);
   cur -> parent -> child_exit_status = cur -> exit_status;
   uint32_t *pd;
   /* Destroy the current process's page directory and switch back

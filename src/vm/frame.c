@@ -71,7 +71,7 @@ void free_frame(void* memory)
     if (frame -> memory == memory)
     {
       palloc_free_page (memory);
-      frame -> memory = NULL:
+      frame -> memory = NULL;
       frame -> tid = -1;
       break;
     }
