@@ -4,8 +4,6 @@
 #include "threads/palloc.h"
 #include <list.h>
 
-#define TABLE_LENGTH 64
-
 struct frame
 {
   int frame_number;
