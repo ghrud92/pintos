@@ -147,23 +147,22 @@ page_fault (struct intr_frame *f)
   not_present = (f->error_code & PF_P) == 0;
   write = (f->error_code & PF_W) != 0;
   user = (f->error_code & PF_U) != 0;
-  
   if (is_user_vaddr(fault_addr))
   {
-
+    printf("fault address is valid")
   }
   else
   {
+    printf("fault address is invalid")
     if(load_page(memory_map_fault(fault_addr)))
     {
-
+      return;
     }
     else
     {
       kill (f);
     }
   }
-
   printf ("%s: exit(%d)\n", thread_current ()->name, -1);
   thread_current()->exit_status = -1;
   thread_exit();
