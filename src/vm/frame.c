@@ -77,7 +77,6 @@ struct frame* find_free_frame(enum palloc_flags flags)
             return temp;
         }
     }
-    printf("%s\n", "3");
     return NULL;
 }
 

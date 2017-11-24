@@ -19,7 +19,9 @@ bool load_page(struct page* page)
 {
     uint8_t* kpage = get_free_frame(PAL_USER);
     if (kpage == NULL)
+    {
         return false;
+    }
 
     // load this page
     if (file_read (page -> file, kpage, page -> read_bytes) != (int) page -> read_bytes)
@@ -46,6 +48,18 @@ struct page* get_page(uint8_t* upage)
 
     struct list_elem* e;
     struct thread* t = thread_current();
+
+    if (list_size(&t -> page_table) == 1)
+    {
+        struct page* current = list_entry(list_begin(&t -> page_table), struct page, elem);
+        if (current -> upage == temp.upage)
+        {
+            return current;
+        }
+        else
+            return NULL;
+    }
+
     for (e = list_begin(&t -> page_table);
         e != list_end(&t -> page_table);
         e = list_next(&t -> page_table))

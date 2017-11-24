@@ -154,6 +154,8 @@ page_fault (struct intr_frame *f)
   if (is_user_vaddr(fault_addr))
   {
     printf("fault address is valid\n");
+    load_page(get_page(fault_addr));
+    return;
   }
   else
   {
