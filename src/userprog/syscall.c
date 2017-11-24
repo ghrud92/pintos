@@ -10,6 +10,7 @@
 #include "userprog/pagedir.h"
 #include <list.h>
 #include "threads/synch.h"
+#include "vm/page.h"
 
 
 static void syscall_handler (struct intr_frame *);
@@ -20,8 +21,16 @@ struct lock file_lock;
 void address_check (void * addr)
 {
   // return true;
-  if (!is_user_vaddr(addr) || !pagedir_get_page(thread_current()->pagedir, addr))
+  //if (!is_user_vaddr(addr) || !pagedir_get_page(thread_current()->pagedir, addr))
+  if (!is_user_vaddr(addr))
     exit(-1);
+  struct page * mypage = get_page((void * addr));
+  if (mypage)
+  {
+    if(!load_page(mypage))
+      exit(-1);
+  }
+  //about grow stack
   else
 	  return;
 }
