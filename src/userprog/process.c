@@ -511,8 +511,8 @@ load_segment (struct file *file, off_t ofs, uint8_t *upage,
       page -> valid_bit = false;
       page -> file = file;
       page -> offset = ofs;
-      page -> read_bytes = read_bytes;
-      page -> zero_bytes = zero_bytes;
+      page -> read_bytes = page_read_bytes;
+      page -> zero_bytes = page_zero_bytes;
       page -> writable = writable;
       page -> upage = upage;
 

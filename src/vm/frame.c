@@ -47,10 +47,29 @@ void* get_free_frame(enum palloc_flags flags)
 
 struct frame* find_free_frame(enum palloc_flags flags)
 {
+    if (list_empty(&frame_table))
+        return NULL;
+
     struct list_elem* e;
 
+    if (list_size(&frame_table) == 1)
+    {
+        struct frame* temp = list_entry(list_begin(&frame_table), struct frame, elem);
+        if (temp -> memory == NULL)
+        {
+            temp -> memory = palloc_get_page (flags);
+            return temp;
+        }
+        else
+        {
+            return NULL;
+        }
+    }
+
+    int i = 0;
     for (e = list_begin(&frame_table); e != list_end(&frame_table); e = list_next(&frame_table))
     {
+        i++;
         struct frame* temp = list_entry(e, struct frame, elem);
         if (temp -> memory == NULL)
         {
@@ -58,6 +77,7 @@ struct frame* find_free_frame(enum palloc_flags flags)
             return temp;
         }
     }
+    printf("%s\n", "3");
     return NULL;
 }
 

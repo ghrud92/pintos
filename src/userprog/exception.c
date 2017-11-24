@@ -4,12 +4,15 @@
 #include "userprog/gdt.h"
 #include "threads/interrupt.h"
 #include "threads/thread.h"
+#include "vm/page.h"
+#include "threads/vaddr.h"
 
 /* Number of page faults processed. */
 static long long page_fault_cnt;
 
 static void kill (struct intr_frame *);
 static void page_fault (struct intr_frame *);
+struct page* memory_map_fault (void * fault_addr);
 
 /* Registers handlers for interrupts that can be caused by user
    programs.
@@ -122,6 +125,7 @@ kill (struct intr_frame *f)
 static void
 page_fault (struct intr_frame *f)
 {
+    printf("%s\n", "start page fault");
   bool not_present;  /* True: not-present page, false: writing r/o page. */
   bool write;        /* True: access was write, false: access was read. */
   bool user;         /* True: access by user, false: access by kernel. */
@@ -149,11 +153,11 @@ page_fault (struct intr_frame *f)
   user = (f->error_code & PF_U) != 0;
   if (is_user_vaddr(fault_addr))
   {
-    printf("fault address is valid")
+    printf("fault address is valid\n");
   }
   else
   {
-    printf("fault address is invalid")
+    printf("fault address is invalid\n");
     if(load_page(memory_map_fault(fault_addr)))
     {
       return;
@@ -179,7 +183,7 @@ page_fault (struct intr_frame *f)
   // thread_exit ();
 }
 
-static page *
+struct page*
 memory_map_fault (void * fault_addr)
 {
   return get_page(fault_addr);
