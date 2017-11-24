@@ -30,6 +30,7 @@ void* get_free_frame(enum palloc_flags flags)
   if (frame != NULL)
   {
       frame -> tid = thread_tid();
+      frame -> memory = palloc_get_page (flags);
       return frame -> memory;
   }
 
@@ -49,13 +50,12 @@ struct frame* find_free_frame(enum palloc_flags flags)
 {
   if (list_empty(&frame_table))
       return NULL;
-      
+
   struct frame * now = list_entry(list_front(&frame_table), struct frame, elem);
   while (now != NULL)
   {
     if (now -> memory == NULL)
     {
-      now -> memory = palloc_get_page(flags);
       return now;
     }
 
