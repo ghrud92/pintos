@@ -125,6 +125,7 @@ kill (struct intr_frame *f)
 static void
 page_fault (struct intr_frame *f)
 {
+    printf("%s\n", "start page fault");
   bool not_present;  /* True: not-present page, false: writing r/o page. */
   bool write;        /* True: access was write, false: access was read. */
   bool user;         /* True: access by user, false: access by kernel. */
@@ -150,20 +151,18 @@ page_fault (struct intr_frame *f)
   not_present = (f->error_code & PF_P) == 0;
   write = (f->error_code & PF_W) != 0;
   user = (f->error_code & PF_U) != 0;
-  if (is_user_vaddr(fault_addr))
+  if (not_present && is_user_vaddr(fault_addr))
   {
-    printf("fault address is Valid\n");
-    struct page* page = get_page(fault_addr);
-    if (page)
+    printf("fault address is valid\n");
+    struct page * fault_page = get_page ((void *) fault_addr);
+    if (fault_page)
     {
-        load_page(page);
+      if(!load_page(fault_page))
+        kill(f);
     }
+    //about stack growth
     else
-    {
-        // page is null
-        printf("%s\n", "page is null");
-    }
-    return;
+      return;
   }
   else
   {
