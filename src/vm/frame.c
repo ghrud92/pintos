@@ -47,9 +47,25 @@ void* get_free_frame(enum palloc_flags flags)
 
 struct frame* find_free_frame(enum palloc_flags flags)
 {
-    if (list_empty(&frame_table))
-        return NULL;
-
+  if (list_empty(&frame_table))
+      return NULL;
+  struct frame * now = list_entry(list_front(&frame_table), struct frame, elem);
+  while (now != NULL)
+  {
+    if (now -> memory == NULL)
+    {
+      temp -> memory == NULL;
+      return temp;
+    }
+    else
+      return NULL;
+    if (now == list_entry(list_end(&frame_table), struct frame, elem))
+      break;
+    now = list_entry(list_next(&(now->elem)), struct frame, elem);
+  }
+  return NULL;
+}
+/*
     struct list_elem* e;
 
     if (list_size(&frame_table) == 1)
@@ -65,7 +81,7 @@ struct frame* find_free_frame(enum palloc_flags flags)
             return NULL;
         }
     }
-
+*/
     int i = 0;
     for (e = list_begin(&frame_table); e != list_end(&frame_table); e = list_next(&frame_table))
     {
