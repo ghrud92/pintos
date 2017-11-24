@@ -42,41 +42,49 @@ void* get_free_frame(enum palloc_flags flags)
 
   frame_number++;
 
-  return memory;
+  return frame -> memory;
 }
 
 struct frame* find_free_frame(enum palloc_flags flags)
 {
   if (list_empty(&frame_table))
       return NULL;
+      
   struct frame * now = list_entry(list_front(&frame_table), struct frame, elem);
   while (now != NULL)
   {
     if (now -> memory == NULL)
     {
-      now -> memory == palloc_get_page(flags);
+      now -> memory = palloc_get_page(flags);
       return now;
     }
-    now = list_entry(list_next(&(now->elem)), struct frame, elem);
+
+    if (now -> elem.next != NULL)
+        now = list_entry(list_next(&(now->elem)), struct frame, elem);
+    else
+        break;
   }
   return NULL;
 }
 
 void free_frame(void* memory)
 {
-  struct list_elem* e;
-
-  for (e = list_begin(&frame_table); e != list_end(&frame_table); e = list_next(&frame_table))
-  {
-    struct frame* frame = list_entry(e, struct frame, elem);
-    if (frame -> memory == memory)
+    struct frame * now = list_entry(list_front(&frame_table), struct frame, elem);
+    while (now != NULL)
     {
-      palloc_free_page (memory);
-      frame -> memory = NULL;
-      frame -> tid = -1;
-      break;
+        if (now -> memory == memory)
+        {
+            palloc_free_page (memory);
+            now -> memory = NULL;
+            now -> tid = -1;
+            break;
+        }
+
+        if (now -> elem.next != NULL)
+            now = list_entry(list_next(&(now->elem)), struct frame, elem);
+        else
+            break;
     }
-  }
 }
 
 struct frame *

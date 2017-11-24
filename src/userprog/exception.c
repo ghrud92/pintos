@@ -152,16 +152,32 @@ page_fault (struct intr_frame *f)
   user = (f->error_code & PF_U) != 0;
   if (is_user_vaddr(fault_addr))
   {
-    printf("fault address is valid\n");
-    load_page(get_page(fault_addr));
+    printf("fault address is Valid\n");
+    struct page* page = get_page(fault_addr);
+    if (page)
+    {
+        load_page(page);
+    }
+    else
+    {
+        // page is null
+        printf("%s\n", "page is null");
+    }
     return;
   }
   else
   {
-    printf("fault address is invalid\n");
-    if(load_page(memory_map_fault(fault_addr)))
+    printf("fault address is Invalid\n");
+
+    struct page* page = memory_map_fault (fault_addr);
+    if (page)
     {
-      return;
+        bool success = load_page(page);
+        if (success)
+        {
+            printf("%s\n", "load success");
+            return;
+        }
     }
     else
     {

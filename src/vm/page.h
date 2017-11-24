@@ -14,13 +14,13 @@ struct page
   size_t read_bytes;
   size_t zero_bytes;
   bool writable;
-  uint8_t* upage;
+  void* upage;
   struct list_elem elem;
 };
 
 void init_page_table(struct list*);
 void destroy_page_table(struct list*);
 bool load_page(struct page* page);
-struct page* get_page(uint8_t* upage);
+struct page* get_page(void* upage);
 
 #endif /* vm/page.h */
