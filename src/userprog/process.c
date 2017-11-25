@@ -556,30 +556,39 @@ load_segment (struct file *file, off_t ofs, uint8_t *upage,
 static bool
 setup_stack (void **esp)
 {
-    // uint8_t *kpage;
-    struct page* kpage;
-    bool success = false;
+    bool success = grow_stack (((uint8_t *) PHYS_BASE) - PGSIZE);
+    if (!success)
+    {
+        return false;
+    }
 
-    // kpage = palloc_get_page (PAL_USER | PAL_ZERO);
-    kpage = number_to_frame(get_free_frame_number(PAL_USER | PAL_ZERO));
-    // kpage =
-    if (kpage == NULL)
-    {
-        printf("%s\n", "kpage is null");
-    }
-    if (kpage != NULL)
-    {
-        success = install_page (((uint8_t *) PHYS_BASE) - PGSIZE, kpage, true);
-        if (success)
-            *esp = PHYS_BASE;
-        else
-            free_frame (kpage);
-    }
-    if(success)
-        printf("%s\n", "install page success");
-    else
-        printf("%s\n", "install page failed");
-    return success;
+    *esp = PHYS_BASE;
+    return true;
+
+    // // uint8_t *kpage;
+    // struct page* kpage;
+    // bool success = false;
+    //
+    // // kpage = palloc_get_page (PAL_USER | PAL_ZERO);
+    // kpage = number_to_frame(get_free_frame_number(PAL_USER | PAL_ZERO));
+    // // kpage =
+    // if (kpage == NULL)
+    // {
+    //     printf("%s\n", "kpage is null");
+    // }
+    // if (kpage != NULL)
+    // {
+    //     success = install_page (((uint8_t *) PHYS_BASE) - PGSIZE, kpage, true);
+    //     if (success)
+    //         *esp = PHYS_BASE;
+    //     else
+    //         free_frame (kpage);
+    // }
+    // if(success)
+    //     printf("%s\n", "install page success");
+    // else
+    //     printf("%s\n", "install page failed");
+    // return success;
 }
 
 /* Adds a mapping from user virtual address UPAGE to kernel

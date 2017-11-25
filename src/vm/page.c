@@ -74,12 +74,6 @@ struct page* find_page(void* upage)
     return NULL;
 }
 
-struct page* alloc_page(enum palloc_flags flags)
-{
-    struct page* page = malloc(sizeof(struct page));
-
-}
-
 bool grow_stack (void * ptr)
 {
     struct page * expage = malloc(sizeof(struct page));

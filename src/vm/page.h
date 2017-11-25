@@ -23,6 +23,6 @@ void init_page_table(struct list*);
 void destroy_page_table(struct list*);
 bool load_page(struct page* page);
 struct page* find_page(void* upage);
-struct page* alloc_page(enum palloc_flags flags);
+bool grow_stack (void * ptr);
 
 #endif /* vm/page.h */
