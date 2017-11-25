@@ -2,6 +2,7 @@
 #define VM_PAGE_H
 
 #include "filesys/off_t.h"
+#include "threads/palloc.h"
 #include <list.h>
 
 struct page
@@ -21,6 +22,7 @@ struct page
 void init_page_table(struct list*);
 void destroy_page_table(struct list*);
 bool load_page(struct page* page);
-struct page* get_page(void* upage);
+struct page* find_page(void* upage);
+struct page* alloc_page(enum palloc_flags flags);
 
 #endif /* vm/page.h */

@@ -154,7 +154,7 @@ page_fault (struct intr_frame *f)
   if (not_present && is_user_vaddr(fault_addr))
   {
     printf("fault address is valid\n");
-    struct page * fault_page = get_page ((void *) fault_addr);
+    struct page * fault_page = find_page ((void *) fault_addr);
     if (fault_page)
     {
       if(!load_page(fault_page))
@@ -202,5 +202,5 @@ page_fault (struct intr_frame *f)
 struct page*
 memory_map_fault (void * fault_addr)
 {
-  return get_page(fault_addr);
+  return find_page(fault_addr);
 }

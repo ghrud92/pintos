@@ -24,7 +24,7 @@ void address_check (void * addr)
   //if (!is_user_vaddr(addr) || !pagedir_get_page(thread_current()->pagedir, addr))
   if (!is_user_vaddr(addr))
     exit(-1);
-  struct page * mypage = get_page((void *) addr);
+  struct page * mypage = find_page((void *) addr);
   if (mypage)
   {
     if(!load_page(mypage))

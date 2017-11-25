@@ -21,11 +21,14 @@ void destroy_page_table(struct list* page_table)
 
 bool load_page(struct page* page)
 {
-    uint8_t* kpage = get_free_frame(PAL_USER);
+    int frame_number = get_free_frame_number(PAL_USER);
+    uint8_t* kpage = number_to_frame(frame_number);
     if (kpage == NULL)
     {
         return false;
     }
+
+    page -> frame_number = frame_number;
 
     // load this page
     if (file_read (page -> file, kpage, page -> read_bytes) != (int) page -> read_bytes)
@@ -45,7 +48,7 @@ bool load_page(struct page* page)
     return true;
 }
 
-struct page* get_page(void* upage)
+struct page* find_page(void* upage)
 {
     struct page temp;
     temp.upage = pg_round_down(upage);
@@ -70,4 +73,10 @@ struct page* get_page(void* upage)
     }
 
     return NULL;
+}
+
+struct page* alloc_page(enum palloc_flags flags)
+{
+    struct page* page = malloc(sizeof(struct page));
+
 }
