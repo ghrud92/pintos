@@ -3,6 +3,7 @@
 #include "vm/frame.h"
 #include "userprog/process.h"
 #include "threads/thread.h"
+#include "threads/malloc.h"
 #include "threads/vaddr.h"
 #include <list.h>
 #include <string.h>
@@ -24,9 +25,7 @@ bool load_page(struct page* page)
     int frame_number = get_free_frame_number(PAL_USER);
     uint8_t* kpage = number_to_frame(frame_number);
     if (kpage == NULL)
-    {
         return false;
-    }
 
     page -> frame_number = frame_number;
 
@@ -79,4 +78,29 @@ struct page* alloc_page(enum palloc_flags flags)
 {
     struct page* page = malloc(sizeof(struct page));
 
+}
+
+bool grow_stack (void * ptr)
+{
+    struct page * expage = malloc(sizeof(struct page));
+    if (!expage)
+        return false;
+    expage -> upage = pg_round_down(ptr);
+    expage -> writable = true;
+    expage -> frame_number = get_free_frame_number(PAL_USER);
+    if(expage -> frame_number == -1)
+    {
+        free(expage);
+        return false;
+    }
+
+    void* exframe = number_to_frame (expage -> frame_number);
+    if (!install_page(expage -> upage, exframe, expage -> writable))
+    {
+        free(expage);
+        free_frame (exframe);
+        return false;
+    }
+    list_push_front (&(thread_current()->page_table), &expage->elem);
+    return true;
 }
