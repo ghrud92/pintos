@@ -59,6 +59,12 @@ is_user_vaddr (const void *vaddr)
   return vaddr < PHYS_BASE;
 }
 
+static inline bool
+in_valid_range (const void *vaddr)
+{
+  return (is_user_vaddr(vaddr) && 0x08048000 < vaddr);
+}
+
 /* Returns true if VADDR is a kernel virtual address. */
 static inline bool
 is_kernel_vaddr (const void *vaddr) 

@@ -151,7 +151,7 @@ page_fault (struct intr_frame *f)
   not_present = (f->error_code & PF_P) == 0;
   write = (f->error_code & PF_W) != 0;
   user = (f->error_code & PF_U) != 0;
-  if (not_present && is_user_vaddr(fault_addr))
+  if (not_present && in_valid_range (fault_addr))
   {
     printf("fault address is valid\n");
     struct page * fault_page = find_page ((void *) fault_addr);
@@ -160,7 +160,11 @@ page_fault (struct intr_frame *f)
       if(!load_page(fault_page))
         kill(f);
     }
-    //about stack growth
+    else if (fault_addr >= f->esp - 32)
+    {
+      if(!grow_stack (fault_addr))
+        kill(f);
+    }
     else
       return;
   }
