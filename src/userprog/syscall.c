@@ -281,7 +281,7 @@ void seek (int fd, unsigned position)
 int read (int fd, const void *buffer, unsigned size)
 {
   // check whether the buffer address is valid or not
-  address_check(buffer);
+  // address_check(buffer);
 
   // stdout fd
   if (fd == 1)

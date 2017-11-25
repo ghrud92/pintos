@@ -17,7 +17,7 @@ void init_table()
   }
 }
 
-void* get_free_frame(enum palloc_flags flags)
+int get_free_frame_number(enum palloc_flags flags)
 {
   init_table();
 
