@@ -158,10 +158,14 @@ page_fault (struct intr_frame *f)
 //    {
 //      printf("case 1\n");
     if(load_page(find_page (fault_addr)))
+    {
+        printf("%s\n", "load_page success");
       return;
+    }
 //    }
     else if (fault_addr >= f->esp - 32)
     {
+    printf("%s\n", "load_page failed");
       printf("case 2\n");
       if(grow_stack (fault_addr))
         return;

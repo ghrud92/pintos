@@ -18,7 +18,7 @@ void init_table()
   }
 }
 
-int get_free_frame_number(enum palloc_flags flags, void* upage)
+void* get_free_frame(enum palloc_flags flags, void* upage)
 {
   init_table();
 
@@ -31,11 +31,13 @@ int get_free_frame_number(enum palloc_flags flags, void* upage)
   if (frame != NULL)
   {
       frame -> tid = thread_tid();
+      frame -> memory = palloc_get_page (flags);
+      // install_page (upage, frame -> memory, true);
       return frame -> memory;
   }
 
   void* memory = palloc_get_page(flags);
-  install_page (upage, memory, true);
+  // install_page (upage, memory, true);
   frame = malloc (sizeof(struct frame));
   frame -> frame_number = frame_number;
   frame -> memory = memory;
@@ -44,7 +46,7 @@ int get_free_frame_number(enum palloc_flags flags, void* upage)
 
   frame_number++;
 
-  return frame -> frame_number;
+  return frame -> memory;
 }
 
 struct frame* find_free_frame(enum palloc_flags flags)

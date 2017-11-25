@@ -74,6 +74,7 @@ process_execute (const char *file_name)
 static void
 start_process (void *file_name_)
 {
+    printf("%s %d\n", "start process", thread_current ()->tid);
   char *file_name = file_name_;
   struct intr_frame if_;
   bool success;
@@ -91,11 +92,12 @@ start_process (void *file_name_)
   if_.cs = SEL_UCSEG;
   if_.eflags = FLAG_IF | FLAG_MBS;
   success = load (file_name, &if_.eip, &if_.esp);
-  // printf("%s %d\n", "after the load function", thread_current()->tid);
+  printf("%s %d\n", "after the load function", thread_current()->tid);
 
   /* If load failed, quit. */
   if (!success)
   {
+      printf("%s\n", "load failed");
     thread_current() -> exit_status = TID_ERROR;
     thread_current()->parent->child_exit_status = TID_ERROR;
     thread_current()->parent->before_child_load = false;
@@ -160,6 +162,7 @@ start_process (void *file_name_)
   // Free argv
   free(argvs);
 
+printf("%s\n", "after the set esp");
   /* Start the user process by simulating a return from an
      interrupt, implemented by intr_exit (in
      threads/intr-stubs.S).  Because intr_exit takes all of its
@@ -556,6 +559,7 @@ load_segment (struct file *file, off_t ofs, uint8_t *upage,
 static bool
 setup_stack (void **esp)
 {
+    printf("%s\n", "start of setup stack");
     bool success = grow_stack (((uint8_t *) PHYS_BASE) - PGSIZE);
     if (!success)
     {
@@ -563,6 +567,7 @@ setup_stack (void **esp)
     }
 
     *esp = PHYS_BASE;
+    printf("%s\n", "end of setup stack");
     return true;
 
     // // uint8_t *kpage;
