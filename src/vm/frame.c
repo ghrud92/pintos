@@ -18,7 +18,7 @@ void init_table()
   }
 }
 
-int get_free_frame_number(enum palloc_flags flags)
+int get_free_frame_number(enum palloc_flags flags, void* upage)
 {
   init_table();
 
@@ -35,6 +35,7 @@ int get_free_frame_number(enum palloc_flags flags)
   }
 
   void* memory = palloc_get_page(flags);
+  install_page (upage, memory, true);
   frame = malloc (sizeof(struct frame));
   frame -> frame_number = frame_number;
   frame -> memory = memory;
@@ -90,28 +91,19 @@ void free_frame(void* memory)
 struct frame *
 number_to_frame (tid_t finding_no)
 {
-    printf("%s %d\n", "global number ", frame_number);
   if (list_empty(&frame_table))
     return NULL;
   struct frame * now = list_entry(list_front(&frame_table), struct frame, elem);
-  if (is_kernel_vaddr (now)){
-      printf("%s\n", "aa");
+
+  while (now != NULL)
+  {
+    if (now -> frame_number == finding_no)
+    {
+      return now;
+    }
+    if (now == list_entry(list_end(&frame_table), struct frame, elem))
+      break;
+    now = list_entry(list_next(&(now->elem)), struct frame, elem);
   }
-  // printf("%s %d\n", "tid ", now -> tid);
-  return now;
-  // while (now != NULL)
-  // {
-  //     printf("%s %d\n", "loop frame number", now -> frame_number);
-  //     printf("%s\n", "b");
-  //   // if (now -> frame_number == finding_no)
-  //   // {
-  //       printf("%s\n", "c");
-  //     return now;
-  //   // }
-  //     printf("%s\n", "d");
-  //   if (now == list_entry(list_end(&frame_table), struct frame, elem))
-  //     break;
-  //   now = list_entry(list_next(&(now->elem)), struct frame, elem);
-  // }
   return NULL;
 }

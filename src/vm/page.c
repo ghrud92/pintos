@@ -24,8 +24,9 @@ bool load_page(struct page* page)
 {
     if(!page)
         return false;
-    int frame_number = get_free_frame_number(PAL_USER);
+    int frame_number = get_free_frame_number(PAL_USER, page);
     uint8_t* kpage = number_to_frame(frame_number);
+    // uint8_t* kpage = palloc_get_page (PAL_USER);
     if (kpage == NULL)
         return false;
 
@@ -83,7 +84,7 @@ bool grow_stack (void * ptr)
         return false;
     expage -> upage = pg_round_down(ptr);
     expage -> writable = true;
-    expage -> frame_number = get_free_frame_number(PAL_USER);
+    expage -> frame_number = get_free_frame_number(PAL_USER, expage -> upage);
     if(expage -> frame_number == -1)
     {
         free(expage);

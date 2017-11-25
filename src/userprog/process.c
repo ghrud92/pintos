@@ -39,8 +39,8 @@ process_execute (const char *file_name)
 
   /* Make a copy of FILE_NAME.
      Otherwise there's a race between the caller and load(). */
-  // fn_copy = palloc_get_page (0);
-  fn_copy = number_to_frame(get_free_frame_number(PAL_USER));
+  fn_copy = palloc_get_page (0);
+  // fn_copy = number_to_frame(get_free_frame_number(PAL_USER));
   if (fn_copy == NULL)
     return TID_ERROR;
   strlcpy (fn_copy, file_name, PGSIZE);
