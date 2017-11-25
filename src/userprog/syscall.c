@@ -22,15 +22,19 @@ void address_check (void * addr)
 {
   // return true;
   //if (!is_user_vaddr(addr) || !pagedir_get_page(thread_current()->pagedir, addr))
-  if (!is_user_vaddr(addr))
+  if (!in_valid_range(addr))
     exit(-1);
-  struct page * mypage = get_page((void *) addr);
+  struct page * mypage = get_page(void * addr);
   if (mypage)
   {
     if(!load_page(mypage))
       exit(-1);
   }
-  //about grow stack
+  else if (fault_addr >= f->esp - 32)
+  {
+    if(!grow_stack(addr))
+      exit(-1);
+  }
   else
 	  return;
 }
