@@ -3,6 +3,7 @@
 #include "vm/frame.h"
 #include "userprog/process.h"
 #include "threads/thread.h"
+#include "threads/malloc.h"
 #include "threads/vaddr.h"
 #include <list.h>
 #include <string.h>
@@ -21,9 +22,12 @@ void destroy_page_table(struct list* page_table)
 
 bool load_page(struct page* page)
 {
-    uint8_t* kpage = get_free_frame(PAL_USER);
+    int frame_number = get_free_frame_number(PAL_USER);
+    uint8_t* kpage = number_to_frame(frame_number);
     if (kpage == NULL)
         return false;
+
+    page -> frame_number = frame_number;
 
     // load this page
     if (file_read (page -> file, kpage, page -> read_bytes) != (int) page -> read_bytes)
@@ -43,24 +47,18 @@ bool load_page(struct page* page)
     return true;
 }
 
-struct page* get_page(void* upage)
+struct page* find_page(void* upage)
 {
     struct page temp;
     temp.upage = pg_round_down(upage);
 
     struct thread* t = thread_current();
-<<<<<<< HEAD
-    for (e = list_begin(&t -> page_table);
-        e != list_end(&t -> page_table);
-        e = list_next(&t -> page_table))
-=======
 
     if (list_empty(&t -> page_table))
         return NULL;
 
     struct page * now = list_entry(list_front(&t -> page_table), struct page, elem);
     while (now != NULL)
->>>>>>> 5b72c8ba7c88b9a38843ce2d94d80d98017724b5
     {
       if (now -> upage == temp.upage)
       {
@@ -76,6 +74,12 @@ struct page* get_page(void* upage)
     return NULL;
 }
 
+struct page* alloc_page(enum palloc_flags flags)
+{
+    struct page* page = malloc(sizeof(struct page));
+
+}
+
 bool grow_stack (void * ptr)
 {
     struct page * expage = malloc(sizeof(struct page));
@@ -83,18 +87,20 @@ bool grow_stack (void * ptr)
         return false;
     expage -> upage = pg_round_down(ptr);
     expage -> writable = true;
-    void * exframe = get_free_frame(PAL_USER)
-    if(!exframe)
+    expage -> frame_number = get_free_frame_number(PAL_USER);
+    if(expage -> frame_number == -1)
     {
         free(expage);
         return false;
     }
-    else if (!install_page(expage -> upage, exframe, expage -> writeable)
+
+    void* exframe = number_to_frame (expage -> frame_number);
+    if (!install_page(expage -> upage, exframe, expage -> writable))
     {
         free(expage);
         free_frame (exframe);
         return false;
     }
-    list_push_front (&(thread_current()->page_table), expage->elem);
+    list_push_front (&(thread_current()->page_table), &expage->elem);
     return true;
 }

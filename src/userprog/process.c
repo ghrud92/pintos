@@ -40,7 +40,7 @@ process_execute (const char *file_name)
   /* Make a copy of FILE_NAME.
      Otherwise there's a race between the caller and load(). */
   // fn_copy = palloc_get_page (0);
-  fn_copy = get_free_frame(PAL_USER);
+  fn_copy = number_to_frame(get_free_frame_number(PAL_USER));
   if (fn_copy == NULL)
     return TID_ERROR;
   strlcpy (fn_copy, file_name, PGSIZE);
@@ -556,11 +556,13 @@ load_segment (struct file *file, off_t ofs, uint8_t *upage,
 static bool
 setup_stack (void **esp)
 {
-    uint8_t *kpage;
+    // uint8_t *kpage;
+    struct page* kpage;
     bool success = false;
 
     // kpage = palloc_get_page (PAL_USER | PAL_ZERO);
-    kpage = get_free_frame(PAL_USER | PAL_ZERO);
+    kpage = number_to_frame(get_free_frame_number(PAL_USER | PAL_ZERO));
+    // kpage =
     if (kpage == NULL)
     {
         printf("%s\n", "kpage is null");
