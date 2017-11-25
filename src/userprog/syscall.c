@@ -18,19 +18,13 @@ static void syscall_handler (struct intr_frame *);
 static struct list opfilelist;
 struct lock file_lock;
 
-void address_check (void * addr)
+void address_check (void * addr, void * esp)
 {
   // return true;
   //if (!is_user_vaddr(addr) || !pagedir_get_page(thread_current()->pagedir, addr))
-  if (!in_valid_range(addr))
+  if (!(in_valid_range(addr) && load_page(find_page(addr))))
     exit(-1);
-  struct page * mypage = find_page((void *) addr);
-  if (mypage)
-  {
-    if(!load_page(mypage))
-      exit(-1);
-  }
-  else if (fault_addr >= f->esp - 32)
+  else if (addr >= esp - 32)
   {
     if(!grow_stack(addr))
       exit(-1);
@@ -219,13 +213,13 @@ int write (int fd , const void * buffer , unsigned size )
 
 void get_args (struct intr_frame * f, int * arg, int num_args)
 {
-  address_check(f->esp);
+  //address_check(f->esp);
   int * ptr;
   int i;
   for (i = 0; i < num_args; i++)
     {
       ptr = (int *) f->esp + i + 1;
-      address_check((void *) ptr);
+      address_check((void *) ptr, f->esp);
       arg[i] = * ptr;
     }
 }
@@ -371,7 +365,7 @@ static void
 syscall_handler (struct intr_frame *f UNUSED)
 {
   int args[100];
-  address_check (f->esp);
+  address_check (f->esp, f->esp);
   int * ptr = f -> esp;
   switch (*ptr) {
     case SYS_HALT:

@@ -22,6 +22,8 @@ void destroy_page_table(struct list* page_table)
 
 bool load_page(struct page* page)
 {
+    if(!page)
+        return false;
     int frame_number = get_free_frame_number(PAL_USER);
     uint8_t* kpage = number_to_frame(frame_number);
     if (kpage == NULL)

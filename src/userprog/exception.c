@@ -154,20 +154,20 @@ page_fault (struct intr_frame *f)
   if (not_present && in_valid_range (fault_addr))
   {
     printf("fault address is valid\n");
-    struct page * fault_page = find_page ((void *) fault_addr);
     if (fault_page)
     {
-      if(!load_page(fault_page))
-        kill(f);
+      printf("case 1\n");
+      if(load_page(find_page (fault_addr)))
+        return;
     }
     else if (fault_addr >= f->esp - 32)
     {
-      if(!grow_stack (fault_addr))
-        kill(f);
+      printf("case 2\n");
+      if(grow_stack (fault_addr))
+        return;
     }
-    else
-      return;
   }
+  /*
   else
   {
     printf("fault address is Invalid\n");
@@ -187,10 +187,12 @@ page_fault (struct intr_frame *f)
       kill (f);
     }
   }
+  */
+  /*
   printf ("%s: exit(%d)\n", thread_current ()->name, -1);
   thread_current()->exit_status = -1;
   thread_exit();
-
+  */
   /* To implement virtual memory, delete the rest of the function
      body, and replace it with code that brings in the page to
      which fault_addr refers. */
@@ -199,8 +201,7 @@ page_fault (struct intr_frame *f)
           not_present ? "not present" : "rights violation",
           write ? "writing" : "reading",
           user ? "user" : "kernel");
-  // kill (f);
-  // thread_exit ();
+  kill (f);
 }
 
 struct page*
