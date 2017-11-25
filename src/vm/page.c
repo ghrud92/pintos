@@ -1,8 +1,12 @@
+#include <stdio.h>
 #include "vm/page.h"
 #include "vm/frame.h"
 #include "userprog/process.h"
 #include "threads/thread.h"
 #include "threads/vaddr.h"
+#include <list.h>
+#include <string.h>
+#include "filesys/file.h"
 
 void init_page_table(struct list* page_table)
 {
@@ -39,23 +43,36 @@ bool load_page(struct page* page)
     return true;
 }
 
-struct page* get_page(uint8_t* upage)
+struct page* get_page(void* upage)
 {
     struct page temp;
     temp.upage = pg_round_down(upage);
 
-    struct list_elem* e;
     struct thread* t = thread_current();
+<<<<<<< HEAD
     for (e = list_begin(&t -> page_table);
         e != list_end(&t -> page_table);
         e = list_next(&t -> page_table))
+=======
+
+    if (list_empty(&t -> page_table))
+        return NULL;
+
+    struct page * now = list_entry(list_front(&t -> page_table), struct page, elem);
+    while (now != NULL)
+>>>>>>> 5b72c8ba7c88b9a38843ce2d94d80d98017724b5
     {
-        struct page* current = list_entry(e, struct page, elem);
-        if (current -> upage == temp.upage)
-        {
-            return current;
-        }
+      if (now -> upage == temp.upage)
+      {
+        return now;
+      }
+
+      if (now -> elem.next != NULL)
+        now = list_entry(list_next(&(now->elem)), struct page, elem);
+      else
+        break;
     }
+
     return NULL;
 }
 

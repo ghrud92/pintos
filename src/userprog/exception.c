@@ -158,7 +158,7 @@ page_fault (struct intr_frame *f)
     if (fault_page)
     {
       if(!load_page(fault_page))
-      kill(f);
+        kill(f);
     }
     //about stack growth
     else
@@ -166,10 +166,17 @@ page_fault (struct intr_frame *f)
   }
   else
   {
-    printf("fault address is invalid\n");
-    if(load_page(memory_map_fault(fault_addr)))
+    printf("fault address is Invalid\n");
+
+    struct page* page = memory_map_fault (fault_addr);
+    if (page)
     {
-      return;
+        bool success = load_page(page);
+        if (success)
+        {
+            printf("%s\n", "load success");
+            return;
+        }
     }
     else
     {
