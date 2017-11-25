@@ -2,6 +2,7 @@
 #include "threads/malloc.h"
 #include "threads/palloc.h"
 #include "threads/thread.h"
+#include "threads/vaddr.h"
 
 int frame_number = 0;
 
@@ -89,16 +90,28 @@ void free_frame(void* memory)
 struct frame *
 number_to_frame (tid_t finding_no)
 {
+    printf("%s %d\n", "global number ", frame_number);
   if (list_empty(&frame_table))
     return NULL;
   struct frame * now = list_entry(list_front(&frame_table), struct frame, elem);
-  while (now != NULL)
-  {
-    if (now -> frame_number == finding_no)
-      return now;
-    if (now == list_entry(list_end(&frame_table), struct frame, elem))
-      break;
-    now = list_entry(list_next(&(now->elem)), struct frame, elem);
+  if (is_kernel_vaddr (now)){
+      printf("%s\n", "aa");
   }
+  // printf("%s %d\n", "tid ", now -> tid);
+  return now;
+  // while (now != NULL)
+  // {
+  //     printf("%s %d\n", "loop frame number", now -> frame_number);
+  //     printf("%s\n", "b");
+  //   // if (now -> frame_number == finding_no)
+  //   // {
+  //       printf("%s\n", "c");
+  //     return now;
+  //   // }
+  //     printf("%s\n", "d");
+  //   if (now == list_entry(list_end(&frame_table), struct frame, elem))
+  //     break;
+  //   now = list_entry(list_next(&(now->elem)), struct frame, elem);
+  // }
   return NULL;
 }
