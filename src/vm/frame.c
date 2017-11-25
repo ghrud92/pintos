@@ -17,21 +17,20 @@ void init_table()
   }
 }
 
-int get_free_frame_number(enum palloc_flags flags)
+void* get_free_frame(enum palloc_flags flags)
 {
   init_table();
 
   if ((flags & PAL_USER) == 0)
   {
-    return -1;
+    return NULL;
   }
 
   struct frame* frame = find_free_frame(flags);
   if (frame != NULL)
   {
       frame -> tid = thread_tid();
-      frame -> memory = palloc_get_page (flags);
-      return frame -> frame_number;
+      return frame -> memory;
   }
 
   void* memory = palloc_get_page(flags);
