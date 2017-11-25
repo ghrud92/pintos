@@ -41,9 +41,10 @@ bool create (const char * file, unsigned initial_size)
     exit(-1);
     return false;
   }
-
+  /*
   // check whether the file pointer is valid
   address_check(file);
+  */
 
   // the length of file name is 0
   if (file[0] == '\0')
@@ -82,8 +83,8 @@ bool create (const char * file, unsigned initial_size)
 
 int open (const char * file)
 {
-  // check whether the file pointer is valid
-  address_check(file);
+  // // check whether the file pointer is valid
+  // address_check(file);
 
   static int nextfd = 2;
   struct openedfile * opfile = malloc (sizeof(struct openedfile) * 1);
@@ -172,7 +173,7 @@ int write (int fd , const void * buffer , unsigned size )
 {
   // check whether the buffer address is valid or not
   // address_check(&buffer);
-  address_check(buffer);
+  // address_check(buffer);
 
   // stdin
   if (fd == 0)
@@ -373,10 +374,12 @@ syscall_handler (struct intr_frame *f UNUSED)
       break;
     case SYS_CREATE:
       get_args(f, &args[0], 2);
+      address_check(args[0], f->esp);
       f -> eax = create((char *) args[0], (unsigned) args[1]);
       break;
     case SYS_OPEN:
       get_args(f, &args[0], 1);
+      address_check(args[0], f->esp);
       f -> eax = open((char *) args[0]);
       break;
     case SYS_CLOSE:
@@ -389,6 +392,7 @@ syscall_handler (struct intr_frame *f UNUSED)
       break;
     case SYS_WRITE:
       get_args(f, &args[0], 3);
+      address_check(args[1], f->esp);
       f -> eax = write((int) args[0], (void *) args[1], (unsigned) args[2]);
       break;
     case SYS_FILESIZE:
@@ -405,6 +409,7 @@ syscall_handler (struct intr_frame *f UNUSED)
       break;
     case SYS_READ:
       get_args(f, &args[0], 3);
+      address_check(args[1], f->esp);
       f -> eax = read ((int) args[0], (void *) args[1], (unsigned) args[2]);
       break;
     case SYS_REMOVE:

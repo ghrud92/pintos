@@ -154,12 +154,12 @@ page_fault (struct intr_frame *f)
   if (not_present && in_valid_range (fault_addr))
   {
     printf("fault address is valid\n");
-    if (fault_page)
-    {
-      printf("case 1\n");
-      if(load_page(find_page (fault_addr)))
-        return;
-    }
+//    if (fault_page)
+//    {
+//      printf("case 1\n");
+    if(load_page(find_page (fault_addr)))
+      return;
+//    }
     else if (fault_addr >= f->esp - 32)
     {
       printf("case 2\n");
