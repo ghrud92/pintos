@@ -24,17 +24,19 @@ bool load_page(struct page* page)
 {
     if(!page)
         return false;
-    int frame_number = get_free_frame_number(PAL_USER);
-    uint8_t* kpage = number_to_frame(frame_number);
+    // int frame_number = get_free_frame_number(PAL_USER, page);
+    // uint8_t* kpage = number_to_frame(frame_number);
+    uint8_t* kpage = get_free_frame(PAL_USER, page);
+    // uint8_t* kpage = palloc_get_page (PAL_USER);
     if (kpage == NULL)
         return false;
 
-    page -> frame_number = frame_number;
+    // page -> frame_number = frame_number;
 
     // load this page
     if (file_read (page -> file, kpage, page -> read_bytes) != (int) page -> read_bytes)
     {
-        free_frame(kpage);
+        // free_frame(kpage);
         return false;
     }
     memset (kpage + page -> read_bytes, 0, page -> zero_bytes);
@@ -83,20 +85,34 @@ bool grow_stack (void * ptr)
         return false;
     expage -> upage = pg_round_down(ptr);
     expage -> writable = true;
-    expage -> frame_number = get_free_frame_number(PAL_USER);
-    if(expage -> frame_number == -1)
+    // expage -> frame_number = get_free_frame_number(PAL_USER, expage -> upage);
+    // if(expage -> frame_number == -1)
+    // {
+    //     free(expage);
+    //     return false;
+    // }
+
+    // void* exframe = number_to_frame (expage -> frame_number);
+    printf("%s\n", "before");
+    void* exframe = get_free_frame(PAL_USER, expage -> upage);
+    printf("%s\n", "after");
+    if (!exframe)
     {
+        printf("%s\n", "1");
         free(expage);
+        printf("%s\n", "2");
         return false;
     }
 
-    void* exframe = number_to_frame (expage -> frame_number);
+    printf("%s\n", "3");
     if (!install_page(expage -> upage, exframe, expage -> writable))
     {
+        printf("%s\n", "4");
         free(expage);
         free_frame (exframe);
         return false;
     }
+    printf("%s\n", "4");
     list_push_front (&(thread_current()->page_table), &expage->elem);
     return true;
 }

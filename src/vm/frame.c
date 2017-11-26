@@ -2,6 +2,7 @@
 #include "threads/malloc.h"
 #include "threads/palloc.h"
 #include "threads/thread.h"
+#include "threads/vaddr.h"
 
 int frame_number = 0;
 
@@ -17,7 +18,7 @@ void init_table()
   }
 }
 
-int get_free_frame_number(enum palloc_flags flags)
+void* get_free_frame(enum palloc_flags flags, void* upage)
 {
   init_table();
 
@@ -30,10 +31,13 @@ int get_free_frame_number(enum palloc_flags flags)
   if (frame != NULL)
   {
       frame -> tid = thread_tid();
+      frame -> memory = palloc_get_page (flags);
+      // install_page (upage, frame -> memory, true);
       return frame -> memory;
   }
 
   void* memory = palloc_get_page(flags);
+  // install_page (upage, memory, true);
   frame = malloc (sizeof(struct frame));
   frame -> frame_number = frame_number;
   frame -> memory = memory;
@@ -42,7 +46,7 @@ int get_free_frame_number(enum palloc_flags flags)
 
   frame_number++;
 
-  return frame -> frame_number;
+  return frame -> memory;
 }
 
 struct frame* find_free_frame(enum palloc_flags flags)
@@ -93,11 +97,14 @@ number_to_frame (tid_t finding_no)
   if (list_empty(&frame_table))
     return NULL;
   struct frame * now = list_entry(list_front(&frame_table), struct frame, elem);
+
   while (now != NULL)
   {
       printf("%s %p\n", "frame table address", now);
     if (now -> frame_number == finding_no)
+    {
       return now;
+    }
     if (now == list_entry(list_end(&frame_table), struct frame, elem))
       break;
     now = list_entry(list_next(&(now->elem)), struct frame, elem);
