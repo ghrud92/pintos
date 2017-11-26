@@ -151,15 +151,21 @@ page_fault (struct intr_frame *f)
   not_present = (f->error_code & PF_P) == 0;
   write = (f->error_code & PF_W) != 0;
   user = (f->error_code & PF_U) != 0;
-  if (not_present && in_valid_range (fault_addr))
+  void* esp = thread_current() -> esp;
+
+  // if(not_present)
+  //   printf("%s\n", "not present");
+  // if(write)
+  //   printf("%s\n", "write");
+
+  if (not_present && user && in_valid_range (fault_addr))
   {
-    printf("fault address is valid\n");
-//    if (fault_page)
-//    {
-//      printf("case 1\n");
+    printf("fault address is valid user\n");
     if(load_page(find_page (fault_addr)))
+    {
+        printf("%s\n", "case 1");
       return;
-//    }
+    }
     else if (fault_addr >= f->esp - 32)
     {
       printf("case 2\n");
@@ -167,6 +173,22 @@ page_fault (struct intr_frame *f)
         return;
     }
   }
+  else if (not_present && !user && is_kernel_vaddr(esp))
+  {
+      printf("fault address is valid kernel\n");
+      if(load_page(find_page(fault_addr)))
+      {
+          printf("%s\n", "case 3");
+          return;
+      }
+      else if(fault_addr >= esp -32)
+      {
+          printf("%s\n", "case 4");
+          if(grow_stack (fault_addr))
+            return;
+      }
+  }
+  printf("%s\n", "go to kill");
   /*
   else
   {

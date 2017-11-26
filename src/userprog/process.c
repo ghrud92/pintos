@@ -556,13 +556,15 @@ load_segment (struct file *file, off_t ofs, uint8_t *upage,
 static bool
 setup_stack (void **esp)
 {
-    bool success = grow_stack (((uint8_t *) PHYS_BASE) - PGSIZE);
-    if (!success)
-    {
-        return false;
-    }
+    // bool success = grow_stack (((uint8_t *) PHYS_BASE) - PGSIZE);
+    // if (!success)
+    // {
+    //     return false;
+    // }
 
     *esp = PHYS_BASE;
+    thread_current () -> esp = esp;
+    printf("%s %p\n", "put the esp to thread", esp);
     return true;
 
     // // uint8_t *kpage;

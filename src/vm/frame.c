@@ -89,11 +89,13 @@ void free_frame(void* memory)
 struct frame *
 number_to_frame (tid_t finding_no)
 {
+    printf("%s %d\n", "tid", thread_current ()->tid);
   if (list_empty(&frame_table))
     return NULL;
   struct frame * now = list_entry(list_front(&frame_table), struct frame, elem);
   while (now != NULL)
   {
+      printf("%s %p\n", "frame table address", now);
     if (now -> frame_number == finding_no)
       return now;
     if (now == list_entry(list_end(&frame_table), struct frame, elem))

@@ -103,6 +103,7 @@ struct thread
     bool wait_target;
     uint32_t *pagedir;                  /* Page directory. */
     struct list page_table;
+    void* esp;
 #endif
 
     /* Owned by thread.c. */
