@@ -7,10 +7,16 @@
 
 struct frame
 {
+  int holder;
+  void * paddr;
+  void * vaddr;
+  unsigned int page_directory;
+  bool valid_bit;
+  bool writable;
+  struct list_elem elem;
+  //
   int frame_number;
   void* memory;
-  int tid;
-  struct list_elem elem;
 };
 
 struct list frame_table;

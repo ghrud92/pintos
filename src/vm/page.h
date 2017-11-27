@@ -7,14 +7,22 @@
 
 struct page
 {
+  //
+  int holder;
+  void * vaddr
+  struct frame * connected_frame;
+  bool writable
+  struct file * file;
+  off_t offset;
+  size_t page_size;
+  //struct hash_elem page_elem;
+  //
   int table_number;
   int frame_number;
   bool valid_bit;
   struct file* file;
-  off_t offset;
   size_t read_bytes;
   size_t zero_bytes;
-  bool writable;
   void* upage;
   struct list_elem elem;
 };
