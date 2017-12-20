@@ -150,16 +150,17 @@ inode_create (block_sector_t sector, off_t length)
   disk_inode = calloc (1, sizeof *disk_inode);
   if (disk_inode != NULL)
   {
-    struct inode myinode;
+    struct inode *myinode;
+    myinode = calloc (1, sizeof *inode);
+    myinode -> length = 0;
+    myinode -> direct_index = 0;
+    myinode -> indirect_index = 0;
     disk_inode->length = length;
     disk_inode->magic = INODE_MAGIC;
-    myinode.length = 0;
-    myinode.direct_index = 0;
-    myinode.indirect_index = 0;
-    inode_grow(&myinode, disk_inode->length);
-    disk_inode->direct_index = myinode.direct_index;
-    disk_inode->indirect_index = myinode.indirect_index;
-    memcpy(&disk_inode->inode_blocks, &myinode.inode_blocks, 16 * sizeof(block_sector_t));
+    inode_grow(myinode, disk_inode->length);
+    disk_inode->direct_index = myinode -> direct_index;
+    disk_inode->indirect_index = myinode -> indirect_index;
+    memcpy(&disk_inode->inode_blocks, &myinode -> inode_blocks, 16 * sizeof(block_sector_t));
     block_write (fs_device, sector, disk_inode);
     free (disk_inode);
     success = true;
