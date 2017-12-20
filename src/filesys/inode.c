@@ -49,7 +49,7 @@ struct inode
 off_t
 inode_grow (struct inode *myinode, off_t length)
 {
-  static char voids[512];
+  static char voids[BLOCK_SECTOR_SIZE];
 
   if (bytes_to_sectors(length) == bytes_to_sectors(myinode->length))
   {
@@ -157,15 +157,15 @@ byte_to_sector (const struct inode *inode, off_t length, off_t pos)
   if (pos < length)
   {
     uint32_t blocks[128];
-    if (pos < 4 * 512)
+    if (pos < 4 * BLOCK_SECTOR_SIZE)
     {
-      return inode->inode_blocks[pos / 512];
+      return inode->inode_blocks[pos / BLOCK_SECTOR_SIZE];
     }
     else
     {
-      pos -= 2048;
-      block_read(fs_device, inode->inode_blocks[pos / (128 * 512) + 4], &blocks);
-      return blocks[pos%(128 * 512) / 512];
+      pos -= 4 * BLOCK_SECTOR_SIZE;
+      block_read(fs_device, inode->inode_blocks[pos / (128 * BLOCK_SECTOR_SIZE) + 4], &blocks);
+      return blocks[(pos%(128 * BLOCK_SECTOR_SIZE)) / BLOCK_SECTOR_SIZE];
     }
   }
 
