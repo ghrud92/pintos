@@ -68,7 +68,7 @@ inode_grow (struct inode *myinode, off_t length)
 
   while (myinode->direct_index < 15 && grow_remain != 0)
   {
-    block_sector_t blocks[128];
+    block_sector_t blocks[BLOCK_SECTOR_SIZE];
     if (myinode->indirect_index == 0)
       free_map_allocate(1, &myinode->inode_blocks[myinode->direct_index]);
     else
@@ -90,47 +90,6 @@ inode_grow (struct inode *myinode, off_t length)
 
   return length;
 }
-
-
-void
-inode_free (struct inode *myinode)
-{
-  size_t num_sector = bytes_to_sectors(myinode->length);
-  size_t index = 0;
-
-  if(num_sector == 0)
-  {
-    return;
-  }
-  while (index < 8 && num_sector != 0)
-  {
-    free_map_release (myinode->inode_blocks[index], 1);
-    num_sector--;
-    index++;
-  }
-
-  while (index < 15 && num_sector != 0)
-  {
-    size_t free_blocks;
-    if (num_sector < 128)
-      free_blocks = num_sector;
-    else
-      free_blocks = 128;
-    int i;
-    block_sector_t block[128];
-    block_read(fs_device, myinode->inode_blocks[index], &block);
-
-    for (i = 0; i < free_blocks; i++)
-    {
-      free_map_release(block[i], 1);
-      num_sector--;
-    }
-
-    free_map_release(myinode->inode_blocks[index], 1);
-    index++;
-  }
-}
-
 
 bool inode_alloc (struct inode_disk * myinode_disk)
 {
@@ -299,7 +258,40 @@ inode_close (struct inode *inode)
       if (inode->removed)
         {
           free_map_release (inode->sector, 1);
-          inode_free(inode);
+          size_t num_sector = bytes_to_sectors(inode->length);
+          int i = 0;
+
+          if(num_sector == 0)
+          {
+            return;
+          }
+          while (i < 8 && num_sector != 0)
+          {
+            free_map_release (inode->inode_blocks[i], 1);
+            num_sector--;
+            i++;
+          }
+
+          while (i < 15 && num_sector != 0)
+          {
+            size_t free_blocks;
+            if (num_sector < 128)
+              free_blocks = num_sector;
+            else
+              free_blocks = 128;
+            int j;
+            block_sector_t block[512];
+            block_read(fs_device, inode->inode_blocks[i], &block);
+
+            for (j = 0; j < free_blocks; j++)
+            {
+              free_map_release(block[j], 1);
+              num_sector--;
+            }
+
+            free_map_release(inode->inode_blocks[i], 1);
+            i++;
+          }
         }
       else
         {
