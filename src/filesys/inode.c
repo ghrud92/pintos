@@ -48,11 +48,9 @@ inode_grow (struct inode *myinode, off_t length)
 
   size_t grow_remain = bytes_to_sectors(length) - bytes_to_sectors(myinode->data.length);
   if (!grow_remain)
-  {
     return length;
-  }
 
-  while (myinode->data.direct_index < 8 && grow_remain != 0)
+  while (myinode->data.direct_index < 4 && grow_remain != 0)
   {
     free_map_allocate (1, &myinode->data.inode_blocks[myinode->data.direct_index]);
     block_write(fs_device, myinode->data.inode_blocks[myinode->data.direct_index], voids);
@@ -60,7 +58,7 @@ inode_grow (struct inode *myinode, off_t length)
     grow_remain--;
   }
 
-  while (myinode->data.direct_index < 15 && grow_remain != 0)
+  while (myinode->data.direct_index < 13 && grow_remain != 0)
   {
     block_sector_t blocks[BLOCK_SECTOR_SIZE];
     if (myinode->data.indirect_index == 0)
@@ -96,14 +94,14 @@ byte_to_sector (const struct inode *inode, off_t pos)
   if (pos < inode->data.length)
   {
     uint32_t blocks[128];
-    if (pos < 8 * BLOCK_SECTOR_SIZE)
+    if (pos < 4 * BLOCK_SECTOR_SIZE)
     {
       return inode->data.inode_blocks[pos / BLOCK_SECTOR_SIZE];
     }
     else
     {
-      pos -= 8 * BLOCK_SECTOR_SIZE;
-      block_read(fs_device, inode->data.inode_blocks[pos / (128 * BLOCK_SECTOR_SIZE) + 8], &blocks);
+      pos -= 4 * BLOCK_SECTOR_SIZE;
+      block_read(fs_device, inode->data.inode_blocks[pos / (128 * BLOCK_SECTOR_SIZE) + 4], &blocks);
       return blocks[(pos%(128 * BLOCK_SECTOR_SIZE)) / BLOCK_SECTOR_SIZE];
     }
   }
@@ -243,13 +241,13 @@ inode_close (struct inode *inode)
       int i = 0;
       if(num_sector == 0)
         return;
-      while (i < 8 && num_sector != 0)
+      while (i < 4 && num_sector != 0)
       {
         free_map_release (inode->data.inode_blocks[i], 1);
         num_sector--;
         i++;
       }
-      while (i < 15 && num_sector != 0)
+      while (i < 13 && num_sector != 0)
       {
         size_t num_free;
         if (num_sector < 128)
@@ -441,5 +439,5 @@ inode_allow_write (struct inode *inode)
 off_t
 inode_length (const struct inode *inode)
 {
-  return inode->length;
+  return inode->data.length;
 }
