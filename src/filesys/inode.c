@@ -49,23 +49,26 @@ struct inode
 off_t
 inode_grow (struct inode *myinode, off_t length)
 {
-  if (bytes_to_sectors(length) == bytes_to_sectors(myinode->length))
+  size_t grow_remain = bytes_to_sectors(length) - bytes_to_sectors(myinode->length);
+
+  if (!grow_remain)
   {
     return length;
   }
 
-  size_t grow_remain = bytes_to_sectors(length) - bytes_to_sectors(myinode->length);
-  char voids[BLOCK_SECTOR_SIZE] = {0,};
+  static char voids[BLOCK_SECTOR_SIZE] = {0,};
   for (;myinode->direct_index < 8 ; myinode->direct_index++)
   {
+    if (!grow_remain)
+      break;
     free_map_allocate (1, &myinode->inode_blocks[myinode->direct_index]);
     block_write(fs_device, myinode->inode_blocks[myinode->direct_index], voids);
     grow_remain--;
-    if (!grow_remain)
-      break;
   }
   for (; myinode->direct_index < 15; myinode->direct_index++)
   {
+    if (!grow_remain)
+      break;
     block_sector_t blocks[BLOCK_SECTOR_SIZE];
     if (myinode->indirect_index == 0)
       free_map_allocate(1, &myinode->inode_blocks[myinode->direct_index]);
@@ -84,8 +87,6 @@ inode_grow (struct inode *myinode, off_t length)
       myinode->direct_index++;
       myinode->indirect_index = 0;
     }
-    if (!grow_remain)
-      break;
   }
   return length;
 }
