@@ -16,10 +16,10 @@ struct inode_disk
   {
     off_t length;                       /* File size in bytes. */
     unsigned magic;                     /* Magic number. */
-    uint32_t unused[110];               /* Not used. */
+    uint32_t unused[108];               /* Not used. */
     uint32_t direct_index;
     uint32_t indirect_index;
-    block_sector_t inode_blocks[14];
+    block_sector_t inode_blocks[16];
   };
 
 /* Returns the number of sectors to allocate for an inode SIZE
@@ -43,7 +43,7 @@ struct inode
     off_t read;
     uint32_t direct_index;
     uint32_t indirect_index;
-    block_sector_t inode_blocks[14];
+    block_sector_t inode_blocks[16];
   };
 
 off_t
@@ -66,7 +66,7 @@ inode_grow (struct inode *myinode, off_t length)
     grow_remain--;
   }
 
-  while (myinode->direct_index < 13 && grow_remain != 0)
+  while (myinode->direct_index < 15 && grow_remain != 0)
   {
     block_sector_t blocks[128];
     if (myinode->indirect_index == 0)
@@ -109,7 +109,7 @@ inode_free (struct inode *myinode)
     index++;
   }
 
-  while (index < 13 && num_sector != 0)
+  while (index < 15 && num_sector != 0)
   {
     size_t free_blocks;
     if (num_sector < 128)
@@ -141,7 +141,7 @@ bool inode_alloc (struct inode_disk * myinode_disk)
   inode_grow(&myinode, myinode_disk->length);
   myinode_disk->direct_index = myinode.direct_index;
   myinode_disk->indirect_index = myinode.indirect_index;
-  memcpy(&myinode_disk->inode_blocks, &myinode.inode_blocks, 14 * sizeof(block_sector_t));
+  memcpy(&myinode_disk->inode_blocks, &myinode.inode_blocks, 16 * sizeof(block_sector_t));
   return true;
 }
 
@@ -258,7 +258,7 @@ inode_open (block_sector_t sector)
   inode->read = my_inode_disk.length;
   inode->direct_index = my_inode_disk.direct_index;
   inode->indirect_index = my_inode_disk.indirect_index;
-  memcpy(&inode->inode_blocks, &my_inode_disk.inode_blocks, 14 * sizeof(block_sector_t));
+  memcpy(&inode->inode_blocks, &my_inode_disk.inode_blocks, 16 * sizeof(block_sector_t));
   return inode;
 }
 
@@ -307,7 +307,7 @@ inode_close (struct inode *inode)
           my_inode_disk.magic = INODE_MAGIC;
           my_inode_disk.direct_index = inode -> direct_index;
           my_inode_disk.indirect_index = inode -> indirect_index;
-          memcpy(&my_inode_disk.inode_blocks, &inode -> inode_blocks, 14 * sizeof(block_sector_t));
+          memcpy(&my_inode_disk.inode_blocks, &inode -> inode_blocks, 16 * sizeof(block_sector_t));
           block_write(fs_device, inode -> sector, &my_inode_disk);
         }
 
