@@ -40,7 +40,6 @@ struct inode
     int deny_write_cnt;                 /* 0: writes ok, >0: deny writes. */
 
     off_t length;                       /* File size in bytes. */
-    off_t read;
     uint32_t direct_index;
     uint32_t indirect_index;
     block_sector_t inode_blocks[16];
@@ -49,6 +48,8 @@ struct inode
 off_t
 inode_grow (struct inode *myinode, off_t length)
 {
+  static char voids[BLOCK_SECTOR_SIZE];
+
   size_t grow_remain = bytes_to_sectors(length) - bytes_to_sectors(myinode->length);
 
   if (!grow_remain)
@@ -56,25 +57,22 @@ inode_grow (struct inode *myinode, off_t length)
     return length;
   }
 
-  static char voids[BLOCK_SECTOR_SIZE] = {0,};
-  for (;myinode->direct_index < 8 ; myinode->direct_index++)
+  while (myinode->direct_index < 8 && grow_remain != 0)
   {
-    if (!grow_remain)
-      break;
     free_map_allocate (1, &myinode->inode_blocks[myinode->direct_index]);
     block_write(fs_device, myinode->inode_blocks[myinode->direct_index], voids);
+    myinode->direct_index++;
     grow_remain--;
   }
-  for (; myinode->direct_index < 15; myinode->direct_index++)
+
+  while (myinode->direct_index < 15 && grow_remain != 0)
   {
-    if (!grow_remain)
-      break;
     block_sector_t blocks[BLOCK_SECTOR_SIZE];
     if (myinode->indirect_index == 0)
       free_map_allocate(1, &myinode->inode_blocks[myinode->direct_index]);
     else
       block_read(fs_device, myinode->inode_blocks[myinode->direct_index], &blocks);
-    for (;myinode->indirect_index < 128 ;myinode->indirect_index++)
+    while (myinode->indirect_index < 128 && grow_remain != 0)
     {
       free_map_allocate(1, &blocks[myinode->indirect_index]);
       block_write(fs_device, blocks[myinode->indirect_index], voids);
@@ -84,10 +82,11 @@ inode_grow (struct inode *myinode, off_t length)
     block_write(fs_device, myinode->inode_blocks[myinode->direct_index], &blocks);
     if (myinode->indirect_index == 128)
     {
-      myinode->direct_index++;
       myinode->indirect_index = 0;
+      myinode->direct_index++;
     }
   }
+
   return length;
 }
 
@@ -96,10 +95,10 @@ inode_grow (struct inode *myinode, off_t length)
    Returns -1 if INODE does not contain data for a byte at offset
    POS. */
 static block_sector_t
-byte_to_sector (const struct inode *inode, off_t length, off_t pos)
+byte_to_sector (const struct inode *inode, off_t pos)
 {
   ASSERT (inode != NULL);
-  if (pos < length)
+  if (pos < inode->length)
   {
     uint32_t blocks[128];
     if (pos < 8 * BLOCK_SECTOR_SIZE)
@@ -204,7 +203,6 @@ inode_open (block_sector_t sector)
   inode->removed = false;
   block_read (fs_device, inode->sector, &my_inode_disk);
   inode->length = my_inode_disk.length;
-  inode->read = my_inode_disk.length;
   inode->direct_index = my_inode_disk.direct_index;
   inode->indirect_index = my_inode_disk.indirect_index;
   memcpy(&inode->inode_blocks, &my_inode_disk.inode_blocks, 16 * sizeof(block_sector_t));
@@ -315,12 +313,12 @@ inode_read_at (struct inode *inode, void *buffer_, off_t size, off_t offset)
   uint8_t *buffer = buffer_;
   off_t bytes_read = 0;
   uint8_t *bounce = NULL;
-  off_t length = inode->read;
+  off_t length = inode->length;
 
   while (size > 0)
     {
       /* Disk sector to read, starting byte offset within sector. */
-      block_sector_t sector_idx = byte_to_sector (inode, inode->read, offset);
+      block_sector_t sector_idx = byte_to_sector (inode, offset);
       int sector_ofs = offset % BLOCK_SECTOR_SIZE;
 
       /* Bytes left in inode, bytes left in sector, lesser of the two. */
@@ -390,7 +388,7 @@ inode_write_at (struct inode *inode, const void *buffer_, off_t size,
   while (size > 0)
     {
       /* Sector to write, starting byte offset within sector. */
-      block_sector_t sector_idx = byte_to_sector (inode, inode->length, offset);
+      block_sector_t sector_idx = byte_to_sector (inode, offset);
       int sector_ofs = offset % BLOCK_SECTOR_SIZE;
 
       /* Bytes left in inode, bytes left in sector, lesser of the two. */
