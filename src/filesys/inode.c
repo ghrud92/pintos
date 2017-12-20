@@ -112,7 +112,6 @@ byte_to_sector (const struct inode *inode, off_t pos)
       return blocks[(pos%(128 * BLOCK_SECTOR_SIZE)) / BLOCK_SECTOR_SIZE];
     }
   }
-
   else
     return -1;
 
@@ -161,8 +160,8 @@ inode_create (block_sector_t sector, off_t length)
     disk_inode->indirect_index = myinode -> indirect_index;
     memcpy(&disk_inode->inode_blocks, &myinode -> inode_blocks, 16 * sizeof(block_sector_t));
     block_write (fs_device, sector, disk_inode);
-    free (disk_inode);
     success = true;
+    free (disk_inode);
   }
   return success;
 }
@@ -244,53 +243,47 @@ inode_close (struct inode *inode)
 
       /* Deallocate blocks if removed. */
       if (inode->removed)
+      {
+        free_map_release (inode->sector, 1);
+        size_t num_sector = bytes_to_sectors(inode->length);
+        int i = 0;
+        if(num_sector == 0)
+          return;
+        while (i < 8 && num_sector != 0)
         {
-          free_map_release (inode->sector, 1);
-          size_t num_sector = bytes_to_sectors(inode->length);
-          int i = 0;
-
-          if(num_sector == 0)
+          free_map_release (inode->inode_blocks[i], 1);
+          num_sector--;
+          i++;
+        }
+        while (i < 15 && num_sector != 0)
+        {
+          size_t num_free;
+          if (num_sector < 128)
+            num_free = num_sector;
+          else
+            num_free = 128;
+          int j = 0;
+          block_sector_t remove_block[BLOCK_SECTOR_SIZE];
+          block_read(fs_device, inode->inode_blocks[i], &remove_block);
+          while (j < num_free)
           {
-            return;
-          }
-          while (i < 8 && num_sector != 0)
-          {
-            free_map_release (inode->inode_blocks[i], 1);
+            free_map_release(remove_block[j], 1);
+            j++
             num_sector--;
-            i++;
           }
-
-          while (i < 15 && num_sector != 0)
-          {
-            size_t free_blocks;
-            if (num_sector < 128)
-              free_blocks = num_sector;
-            else
-              free_blocks = 128;
-            int j;
-            block_sector_t block[512];
-            block_read(fs_device, inode->inode_blocks[i], &block);
-
-            for (j = 0; j < free_blocks; j++)
-            {
-              free_map_release(block[j], 1);
-              num_sector--;
-            }
-
-            free_map_release(inode->inode_blocks[i], 1);
-            i++;
-          }
+          free_map_release(inode->inode_blocks[i], 1);
+          i++;
         }
+      }
       else
-        {
-          my_inode_disk.length = inode -> length;
-          my_inode_disk.magic = INODE_MAGIC;
-          my_inode_disk.direct_index = inode -> direct_index;
-          my_inode_disk.indirect_index = inode -> indirect_index;
-          memcpy(&my_inode_disk.inode_blocks, &inode -> inode_blocks, 16 * sizeof(block_sector_t));
-          block_write(fs_device, inode -> sector, &my_inode_disk);
-        }
-
+      {
+        my_inode_disk.length = inode -> length;
+        my_inode_disk.magic = INODE_MAGIC;
+        my_inode_disk.direct_index = inode -> direct_index;
+        my_inode_disk.indirect_index = inode -> indirect_index;
+        memcpy(&my_inode_disk.inode_blocks, &inode -> inode_blocks, 16 * sizeof(block_sector_t));
+        block_write(fs_device, inode -> sector, &my_inode_disk);
+      }
       free (inode);
     }
 }
@@ -313,7 +306,6 @@ inode_read_at (struct inode *inode, void *buffer_, off_t size, off_t offset)
   uint8_t *buffer = buffer_;
   off_t bytes_read = 0;
   uint8_t *bounce = NULL;
-  off_t length = inode->length;
 
   while (size > 0)
     {
@@ -324,11 +316,7 @@ inode_read_at (struct inode *inode, void *buffer_, off_t size, off_t offset)
       /* Bytes left in inode, bytes left in sector, lesser of the two. */
       off_t inode_left = inode_length (inode) - offset;
       int sector_left = BLOCK_SECTOR_SIZE - sector_ofs;
-      int min_left;
-      if (inode_left < sector_left)
-        min_left = inode_left;
-      else
-        min_left = sector_left;
+      int min_left = inode_left < sector_left ? inode_left : sector_left;
 
       /* Number of bytes to actually copy out of this sector. */
       int chunk_size = size < min_left ? size : min_left;
@@ -394,11 +382,7 @@ inode_write_at (struct inode *inode, const void *buffer_, off_t size,
       /* Bytes left in inode, bytes left in sector, lesser of the two. */
       off_t inode_left = inode_length (inode) - offset;
       int sector_left = BLOCK_SECTOR_SIZE - sector_ofs;
-      int min_left;
-      if (inode_left < sector_left)
-        min_left = inode_left;
-      else
-        min_left = sector_left;
+      int min_left = inode_left < sector_left ? inode_left : sector_left;
 
       /* Number of bytes to actually write into this sector. */
       int chunk_size = size < min_left ? size : min_left;
