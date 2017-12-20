@@ -58,7 +58,7 @@ inode_grow (struct inode *myinode, off_t length)
     grow_remain--;
   }
 
-  while (myinode->data.direct_index < 13 && grow_remain != 0)
+  while (myinode->data.direct_index < 16 && grow_remain != 0)
   {
     block_sector_t blocks[BLOCK_SECTOR_SIZE];
     if (myinode->data.indirect_index == 0)
@@ -247,7 +247,7 @@ inode_close (struct inode *inode)
         num_sector--;
         i++;
       }
-      while (i < 13 && num_sector != 0)
+      while (i < 16 && num_sector != 0)
       {
         size_t num_free;
         if (num_sector < 128)
