@@ -151,7 +151,7 @@ inode_create (block_sector_t sector, off_t length)
   if (disk_inode != NULL)
   {
     struct inode *myinode;
-    myinode = calloc (1, sizeof *inode);
+    myinode = calloc (1, sizeof *myinode);
     myinode -> length = 0;
     myinode -> direct_index = 0;
     myinode -> indirect_index = 0;
