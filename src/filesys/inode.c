@@ -58,7 +58,7 @@ inode_grow (struct inode *myinode, off_t length)
 
   size_t grow_remain = bytes_to_sectors(length) - bytes_to_sectors(myinode->length);
 
-  while (myinode->direct_index < 4 && grow_remain != 0)
+  while (myinode->direct_index < 8 && grow_remain != 0)
   {
     free_map_allocate (1, &myinode->inode_blocks[myinode->direct_index]);
     block_write(fs_device, myinode->inode_blocks[myinode->direct_index], voids);
@@ -102,7 +102,7 @@ inode_free (struct inode *myinode)
   {
     return;
   }
-  while (index < 4 && num_sector != 0)
+  while (index < 8 && num_sector != 0)
   {
     free_map_release (myinode->inode_blocks[index], 1);
     num_sector--;
@@ -157,14 +157,14 @@ byte_to_sector (const struct inode *inode, off_t length, off_t pos)
   if (pos < length)
   {
     uint32_t blocks[128];
-    if (pos < 4 * BLOCK_SECTOR_SIZE)
+    if (pos < 8 * BLOCK_SECTOR_SIZE)
     {
       return inode->inode_blocks[pos / BLOCK_SECTOR_SIZE];
     }
     else
     {
-      pos -= 4 * BLOCK_SECTOR_SIZE;
-      block_read(fs_device, inode->inode_blocks[pos / (128 * BLOCK_SECTOR_SIZE) + 4], &blocks);
+      pos -= 8 * BLOCK_SECTOR_SIZE;
+      block_read(fs_device, inode->inode_blocks[pos / (128 * BLOCK_SECTOR_SIZE) + 8], &blocks);
       return blocks[(pos%(128 * BLOCK_SECTOR_SIZE)) / BLOCK_SECTOR_SIZE];
     }
   }
