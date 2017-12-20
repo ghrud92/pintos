@@ -49,31 +49,29 @@ struct inode
 off_t
 inode_grow (struct inode *myinode, off_t length)
 {
-  static char voids[BLOCK_SECTOR_SIZE];
-
   if (bytes_to_sectors(length) == bytes_to_sectors(myinode->length))
   {
     return length;
   }
 
   size_t grow_remain = bytes_to_sectors(length) - bytes_to_sectors(myinode->length);
-
-  while (myinode->direct_index < 8 && grow_remain != 0)
+  char voids[BLOCK_SECTOR_SIZE] = {0,};
+  for (;myinode->direct_index < 8 ; myinode->direct_index++)
   {
     free_map_allocate (1, &myinode->inode_blocks[myinode->direct_index]);
     block_write(fs_device, myinode->inode_blocks[myinode->direct_index], voids);
-    myinode->direct_index++;
     grow_remain--;
+    if (!grow_remain)
+      break;
   }
-
-  while (myinode->direct_index < 15 && grow_remain != 0)
+  for (; myinode->direct_index < 15; myinode->direct_index++)
   {
-    block_sector_t blocks[128];
+    block_sector_t blocks[BLOCK_SECTOR_SIZE];
     if (myinode->indirect_index == 0)
       free_map_allocate(1, &myinode->inode_blocks[myinode->direct_index]);
     else
       block_read(fs_device, myinode->inode_blocks[myinode->direct_index], &blocks);
-    while (myinode->indirect_index < 128 && grow_remain != 0)
+    for (;myinode->indirect_index < 128 ;myinode->indirect_index++)
     {
       free_map_allocate(1, &blocks[myinode->indirect_index]);
       block_write(fs_device, blocks[myinode->indirect_index], voids);
@@ -83,68 +81,14 @@ inode_grow (struct inode *myinode, off_t length)
     block_write(fs_device, myinode->inode_blocks[myinode->direct_index], &blocks);
     if (myinode->indirect_index == 128)
     {
-      myinode->indirect_index = 0;
       myinode->direct_index++;
+      myinode->indirect_index = 0;
     }
+    if (!grow_remain)
+      break;
   }
-
   return length;
 }
-
-
-void
-inode_free (struct inode *myinode)
-{
-  size_t num_sector = bytes_to_sectors(myinode->length);
-  size_t index = 0;
-
-  if(num_sector == 0)
-  {
-    return;
-  }
-  while (index < 8 && num_sector != 0)
-  {
-    free_map_release (myinode->inode_blocks[index], 1);
-    num_sector--;
-    index++;
-  }
-
-  while (index < 15 && num_sector != 0)
-  {
-    size_t free_blocks;
-    if (num_sector < 128)
-      free_blocks = num_sector;
-    else
-      free_blocks = 128;
-    int i;
-    block_sector_t block[128];
-    block_read(fs_device, myinode->inode_blocks[index], &block);
-
-    for (i = 0; i < free_blocks; i++)
-    {
-      free_map_release(block[i], 1);
-      num_sector--;
-    }
-
-    free_map_release(myinode->inode_blocks[index], 1);
-    index++;
-  }
-}
-
-
-bool inode_alloc (struct inode_disk * myinode_disk)
-{
-  struct inode myinode;
-  myinode.length = 0;
-  myinode.direct_index = 0;
-  myinode.indirect_index = 0;
-  inode_grow(&myinode, myinode_disk->length);
-  myinode_disk->direct_index = myinode.direct_index;
-  myinode_disk->indirect_index = myinode.indirect_index;
-  memcpy(&myinode_disk->inode_blocks, &myinode.inode_blocks, 16 * sizeof(block_sector_t));
-  return true;
-}
-
 
 /* Returns the block device sector that contains byte offset POS
    within INODE.
@@ -205,16 +149,19 @@ inode_create (block_sector_t sector, off_t length)
   disk_inode = calloc (1, sizeof *disk_inode);
   if (disk_inode != NULL)
   {
+    struct inode myinode;
     disk_inode->length = length;
     disk_inode->magic = INODE_MAGIC;
-    disk_inode->length = length;
-    disk_inode->magic = INODE_MAGIC;
-    if (inode_alloc(disk_inode))
-    {
-      block_write (fs_device, sector, disk_inode);
-      success = true;
-    }
+    myinode.length = 0;
+    myinode.direct_index = 0;
+    myinode.indirect_index = 0;
+    inode_grow(&myinode, disk_inode->length);
+    disk_inode->direct_index = myinode.direct_index;
+    disk_inode->indirect_index = myinode.indirect_index;
+    memcpy(&disk_inode->inode_blocks, &myinode.inode_blocks, 16 * sizeof(block_sector_t));
+    block_write (fs_device, sector, disk_inode);
     free (disk_inode);
+    success = true;
   }
   return success;
 }
